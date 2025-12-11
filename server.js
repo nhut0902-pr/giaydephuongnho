@@ -38,23 +38,28 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Health Check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
+// Debug Route - Ping
+app.get('/ping', (req, res) => {
+  res.send('pong');
 });
 
-// Init DB Route (for Vercel first run)
+// Init DB Route (Moved to top)
 app.get('/init-db', async (req, res) => {
   try {
+    console.log('Init DB requested');
     await sequelize.authenticate();
+    console.log('DB Authenticated');
     await sequelize.sync({ alter: true });
+    console.log('DB Synced');
     res.json({ message: 'Database synced successfully' });
   } catch (error) {
+    console.error('Init DB Error:', error);
     res.status(500).json({ error: 'Database sync failed', details: error.message });
   }
 });
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Passport Google Strategy
 passport.use(new GoogleStrategy({
