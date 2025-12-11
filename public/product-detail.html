@@ -57,7 +57,11 @@
             if (!id) { window.location.href = '/products.html'; return; }
 
             try {
-                currentProduct = await productsAPI.getById(id);
+                const [product] = await Promise.all([
+                    productsAPI.getById(id),
+                    new Promise(resolve => setTimeout(resolve, 1500))
+                ]);
+                currentProduct = product;
                 document.title = `${currentProduct.name} - Giày Dép Hương Nhớ`;
 
                 document.getElementById('product-detail').innerHTML = `
