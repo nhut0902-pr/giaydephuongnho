@@ -189,14 +189,14 @@
     // Failsafe: Hide loader after max 3 seconds even if something fails
     window.addEventListener('load', () => {
       setTimeout(() => {
-        const loader = document.getElementById('loader');
+        const loader = document.getElementById('page-loader');
         if (loader) loader.style.display = 'none';
       }, 500);
     });
 
     // Backup failsafe
     setTimeout(() => {
-      const loader = document.getElementById('loader');
+      const loader = document.getElementById('page-loader');
       if (loader) loader.style.display = 'none';
     }, 3000);
   </script>
