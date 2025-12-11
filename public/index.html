@@ -186,10 +186,19 @@
   <script src="js/cart.js?v=2"></script>
   <script src="js/main.js?v=2"></script>
   <script>
-    // Hide loader after 0.5 seconds (minimal delay)
+    // Failsafe: Hide loader after max 3 seconds even if something fails
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+      }, 500);
+    });
+
+    // Backup failsafe
     setTimeout(() => {
-      document.getElementById('loader').style.display = 'none';
-    }, 500);
+      const loader = document.getElementById('loader');
+      if (loader) loader.style.display = 'none';
+    }, 3000);
   </script>
 
   <!--Start of Tawk.to Script-->

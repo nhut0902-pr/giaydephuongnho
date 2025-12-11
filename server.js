@@ -45,6 +45,17 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 
+// Init DB Route (for Vercel first run)
+app.get('/init-db', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    await sequelize.sync({ alter: true });
+    res.json({ message: 'Database synced successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Database sync failed', details: error.message });
+  }
+});
+
 // Passport Google Strategy
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
