@@ -40,6 +40,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
 // Passport Google Strategy
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,

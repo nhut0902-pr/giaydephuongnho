@@ -3,6 +3,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 // Neon PostgreSQL connection
 const sequelize = new Sequelize('postgresql://neondb_owner:npg_QEZkCS8ce9Mg@ep-tiny-star-a1t4r3yf-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require', {
     dialect: 'postgres',
+    dialectModule: require('pg'),
     dialectOptions: {
         ssl: {
             require: true,
