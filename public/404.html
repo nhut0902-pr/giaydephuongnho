@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Trang Không Tồn Tại | Giày Dép Hương Nhớ</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .error-svg {
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+
+        .cls-1 {
+            fill: #ffc541;
+        }
+
+        .cls-2 {
+            fill: #4e4066;
+        }
+
+        .cls-3 {
+            fill: #6f5b92;
+        }
+
+        .cls-4 {
+            fill: #f78d5e;
+        }
+
+        .cls-5 {
+            fill: #fa976c;
+        }
+
+        .cls-6,
+        .cls-7,
+        .cls-8 {
+            fill: #b65c32;
+        }
+
+        .cls-10,
+        .cls-6 {
+            opacity: 0.6;
+        }
+
+        .cls-7 {
+            opacity: 0.4;
+        }
+
+        .cls-9 {
+            fill: #f4b73b;
+        }
+
+        .cls-11 {
+            fill: #f9c358;
+        }
+
+        .cls-12 {
+            fill: #9b462c;
+        }
+
+        .cls-13 {
+            fill: #aa512e;
+        }
+
+        .cls-14 {
+            fill: #7d6aa5;
+        }
+
+        .wheel {
+            animation: wheel-rotate 6s ease infinite;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        @keyframes wheel-rotate {
+            50% {
+                transform: rotate(360deg);
+            }
+
+            100% {
+                transform: rotate(960deg)
+            }
+        }
+
+        .clock-hand-1 {
+            animation: clock-rotate 3s linear infinite;
+            transform-origin: bottom;
+            transform-box: fill-box;
+        }
+
+        .clock-hand-2 {
+            animation: clock-rotate 6s linear infinite;
+            transform-origin: bottom;
+            transform-box: fill-box;
+        }
+
+        @keyframes clock-rotate {
+            100% {
+                transform: rotate(360deg)
+            }
+        }
+
+        #box-top {
+            animation: box-top-anim 2s linear infinite;
+            transform-origin: right top;
+            transform-box: fill-box;
+        }
+
+        @keyframes box-top-anim {
+            50% {
+                transform: rotate(-5deg)
+            }
+        }
+
+        #umbrella {
+            animation: umbrella-anim 6s linear infinite;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        @keyframes umbrella-anim {
+            25% {
+                transform: translateY(10px) rotate(5deg);
+            }
+
+            75% {
+                transform: rotate(-5deg);
+            }
+        }
+
+        #cup {
+            animation: cup-rotate 3s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+            transform-origin: top left;
+            transform-box: fill-box;
+        }
+
+        @keyframes cup-rotate {
+            50% {
+                transform: rotate(-5deg)
+            }
+        }
+
+        #pillow {
+            animation: pillow-anim 3s linear infinite;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        @keyframes pillow-anim {
+            25% {
+                transform: rotate(10deg) translateY(5px)
+            }
+
+            75% {
+                transform: rotate(-10deg)
+            }
+        }
+
+        #stripe {
+            animation: stripe-anim 3s linear infinite;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        @keyframes stripe-anim {
+            25% {
+                transform: translate(10px, 0) rotate(-10deg)
+            }
+
+            75% {
+                transform: translateX(10px)
+            }
+        }
+
+        #bike {
+            animation: bike-anim 6s ease infinite;
+        }
+
+        @keyframes bike-anim {
+            0% {
+                transform: translateX(-1300px)
+            }
+
+            50% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(1300px)
+            }
+        }
+
+        #rucksack {
+            animation: ruck-anim 3s linear infinite;
+            transform-origin: top;
+            transform-box: fill-box;
+        }
+
+        @keyframes ruck-anim {
+            50% {
+                transform: rotate(5deg)
+            }
+        }
+
+        .circle {
+            animation: circle-anim ease infinite;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        .circle.c1 {
+            animation-duration: 2s
+        }
+
+        .circle.c2 {
+            animation-duration: 3s
+        }
+
+        .circle.c3 {
+            animation-duration: 1s
+        }
+
+        .circle.c4 {
+            animation-duration: 1s
+        }
+
+        .circle.c5 {
+            animation-duration: 2s
+        }
+
+        .circle.c6 {
+            animation-duration: 3s
+        }
+
+        @keyframes circle-anim {
+            50% {
+                transform: scale(.2) rotateX(360deg) rotateY(360deg)
+            }
+        }
+
+        .four,
+        #ou {
+            animation: four-anim cubic-bezier(0.39, 0.575, 0.565, 1) infinite;
+        }
+
+        .four.a {
+            transform-origin: bottom left;
+            animation-duration: 3s;
+            transform-box: fill-box;
+        }
+
+        .four.b {
+            transform-origin: bottom right;
+            animation-duration: 3s;
+            transform-box: fill-box;
+        }
+
+        #ou {
+            animation-duration: 6s;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        @keyframes four-anim {
+            50% {
+                transform: scale(.98)
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-page">
+        <svg class="error-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200">
+            <g class="four a">
+                <rect class="cls-2" x="35" y="25" width="30" height="120" rx="5" />
+                <rect class="cls-2" x="15" y="100" width="80" height="25" rx="5" />
+            </g>
+            <g id="ou">
+                <circle class="cls-1" cx="250" cy="100" r="60" />
+                <circle class="cls-11" cx="250" cy="100" r="45" />
+                <circle class="cls-2" cx="250" cy="100" r="30" />
+                <circle class="cls-1 circle c1" cx="230" cy="70" r="8" />
+                <circle class="cls-1 circle c2" cx="280" cy="80" r="6" />
+                <circle class="cls-1 circle c3" cx="260" cy="130" r="5" />
+            </g>
+            <g class="four b">
+                <rect class="cls-2" x="435" y="25" width="30" height="120" rx="5" />
+                <rect class="cls-2" x="405" y="100" width="80" height="25" rx="5" />
+            </g>
+            <g id="bike">
+                <circle class="cls-4 wheel" cx="150" cy="170" r="20" />
+                <circle class="cls-4 wheel" cx="200" cy="170" r="20" />
+                <path class="cls-5" d="M150,170 L175,140 L200,170" fill="none" stroke="#f78d5e" stroke-width="3" />
+            </g>
+        </svg>
+        <h1 style="font-size:2.5rem;color:var(--dark);margin-bottom:1rem">Oops! Trang không tìm thấy</h1>
+        <p style="color:var(--gray);margin-bottom:2rem;font-size:1.1rem">Trang bạn đang tìm kiếm không tồn tại hoặc đã
+            được di chuyển.</p>
+        <a href="/" class="btn btn-primary"><i class="fas fa-home"></i> Về Trang Chủ</a>
+    </div>
+</body>
+
+</html>

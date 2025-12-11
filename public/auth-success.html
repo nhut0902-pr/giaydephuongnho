@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập thành công - Giày Dép Hương Nhớ</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div
+        style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:2rem;text-align:center">
+        <div class="custom-loader" style="margin-bottom:2rem"></div>
+        <h2>Đang đăng nhập...</h2>
+        <p style="color:var(--gray)">Vui lòng đợi trong giây lát</p>
+    </div>
+    <style>
+        .custom-loader {
+            width: 70px;
+            height: 70px;
+            background: #d4a373;
+            border-radius: 50px;
+            -webkit-mask: radial-gradient(circle 31px at 50% calc(100% + 13px), #000 95%, #0000) top 4px left 50%,
+                radial-gradient(circle 31px, #000 95%, #0000) center,
+                radial-gradient(circle 31px at 50% -13px, #000 95%, #0000) bottom 4px left 50%,
+                linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            -webkit-mask-repeat: no-repeat;
+            animation: cu10 1.5s infinite;
+        }
+
+        @keyframes cu10 {
+            0% {
+                -webkit-mask-size: 0 18px, 0 18px, 0 18px, auto
+            }
+
+            16.67% {
+                -webkit-mask-size: 100% 18px, 0 18px, 0 18px, auto
+            }
+
+            33.33% {
+                -webkit-mask-size: 100% 18px, 100% 18px, 0 18px, auto
+            }
+
+            50% {
+                -webkit-mask-size: 100% 18px, 100% 18px, 100% 18px, auto
+            }
+
+            66.67% {
+                -webkit-mask-size: 0 18px, 100% 18px, 100% 18px, auto
+            }
+
+            83.33% {
+                -webkit-mask-size: 0 18px, 0 18px, 100% 18px, auto
+            }
+
+            100% {
+                -webkit-mask-size: 0 18px, 0 18px, 0 18px, auto
+            }
+        }
+    </style>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const user = params.get('user');
+        if (token && user) {
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', user);
+            setTimeout(() => { window.location.href = '/'; }, 1500);
+        } else {
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+
+</html>

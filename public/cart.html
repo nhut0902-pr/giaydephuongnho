@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giỏ Hàng - Giày Dép Hương Nhớ</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo"><span class="logo-icon">👟</span><span>Giày Dép Hương Nhớ</span></a>
+            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a></nav>
+            <div class="header-actions">
+                <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-bag"></i><span
+                        class="cart-count" id="cart-count">0</span></button>
+                <div id="auth-section"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <h1><i class="fas fa-shopping-cart"></i> Giỏ Hàng</h1>
+    </div>
+
+    <div class="container">
+        <div class="checkout-container">
+            <div id="cart-page-items"
+                style="background:white;border-radius:var(--radius);padding:2rem;box-shadow:var(--shadow)">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="checkout-summary">
+                <h3 style="margin-bottom:1rem">Tổng Đơn Hàng</h3>
+                <div class="summary-item"><span>Tạm tính:</span><span id="subtotal">0đ</span></div>
+                <div class="summary-item"><span>Phí vận chuyển:</span><span>Miễn phí</span></div>
+                <div class="summary-total"><span>Tổng:</span><span id="total">0đ</span></div>
+                <a href="/checkout.html" class="btn btn-primary btn-block" style="margin-top:1rem"
+                    id="checkout-btn">Thanh Toán</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fas fa-shopping-bag"></i> Giỏ Hàng</h3><button class="modal-close" onclick="toggleCart()"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cart-items"></div>
+        <div class="cart-footer">
+            <div class="cart-total"><span>Tổng:</span><span id="cart-total">0đ</span></div><a href="/cart.html"
+                class="btn btn-primary btn-block">Xem Giỏ Hàng</a>
+        </div>
+    </div>
+    <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        function renderCartPage() {
+            const container = document.getElementById('cart-page-items');
+            const subtotalEl = document.getElementById('subtotal');
+            const totalEl = document.getElementById('total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            if (cartItems.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-shopping-cart"></i><h3>Giỏ hàng trống</h3><p>Hãy thêm sản phẩm vào giỏ hàng</p><a href="/products.html" class="btn btn-primary">Mua sắm ngay</a></div>';
+                checkoutBtn.style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = cartItems.map(item => {
+                const p = item.Product;
+                return `<div class="cart-item" style="margin-bottom:1rem;padding:1rem;background:var(--light);border-radius:var(--radius)">
+          <div class="cart-item-image" style="width:100px;height:100px"><img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>
+          <div class="cart-item-info" style="flex:1;margin-left:1rem">
+            <div class="cart-item-name" style="font-weight:600;font-size:1.1rem">${p.name}</div>
+            <div class="cart-item-price" style="color:var(--primary-dark);margin:0.5rem 0">${formatPrice(p.price)}</div>
+            <div class="cart-item-quantity" style="display:flex;align-items:center;gap:0.5rem">
+              <button class="quantity-btn" onclick="updateAndRender(${item.id}, ${item.quantity - 1})">-</button>
+              <span style="min-width:30px;text-align:center">${item.quantity}</span>
+              <button class="quantity-btn" onclick="updateAndRender(${item.id}, ${item.quantity + 1})">+</button>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem">${formatPrice(p.price * item.quantity)}</div>
+            <button class="btn btn-danger" style="padding:0.5rem 1rem" onclick="removeAndRender(${item.id})"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>`;
+            }).join('');
+
+            const total = getCartTotal();
+            subtotalEl.textContent = formatPrice(total);
+            totalEl.textContent = formatPrice(total);
+            checkoutBtn.style.display = 'block';
+        }
+
+        async function updateAndRender(id, qty) { await updateCartItem(id, qty); renderCartPage(); }
+        async function removeAndRender(id) { await removeFromCart(id); renderCartPage(); }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCart();
+            renderCartPage();
+        });
+    </script>
+</body>
+
+</html>

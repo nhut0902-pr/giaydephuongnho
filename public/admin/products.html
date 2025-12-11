@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Sản Phẩm - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">👟 Admin Panel</div>
+            <nav class="admin-nav">
+                <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html" class="active"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>Quản Lý Sản Phẩm</h1>
+                <button class="btn btn-primary" onclick="showAddModal()"><i class="fas fa-plus"></i> Thêm Sản
+                    Phẩm</button>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Hình</th>
+                            <th>Tên</th>
+                            <th>Danh mục</th>
+                            <th>Giá</th>
+                            <th>Kho</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-tbody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal-overlay" id="product-modal" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modal-title">Thêm Sản Phẩm</h2><button class="modal-close" onclick="closeModal()"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <form id="product-form" onsubmit="saveProduct(event)">
+                <input type="hidden" id="product-id">
+                <div class="form-group"><label>Tên sản phẩm *</label><input type="text" id="p-name" required></div>
+                <div class="form-group"><label>Mô tả</label><textarea id="p-desc" rows="3"></textarea></div>
+                <div class="form-group"><label>Giá (VNĐ) *</label><input type="number" id="p-price" required min="0">
+                </div>
+
+                <!-- Image Upload -->
+                <div class="form-group">
+                    <label>Hình ảnh sản phẩm</label>
+                    <div style="display:flex;gap:1rem;align-items:center;margin-bottom:0.5rem">
+                        <img id="p-image-preview" src="https://via.placeholder.com/100"
+                            style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:2px dashed #ddd">
+                        <div style="flex:1">
+                            <input type="file" id="p-image-file" accept="image/*" style="display:none"
+                                onchange="uploadImage(this)">
+                            <button type="button" class="btn btn-secondary"
+                                onclick="document.getElementById('p-image-file').click()" id="upload-btn">
+                                <i class="fas fa-upload"></i> Tải ảnh lên
+                            </button>
+                            <p style="font-size:0.8rem;color:var(--gray);margin-top:0.5rem">Hoặc nhập URL:</p>
+                        </div>
+                    </div>
+                    <input type="url" id="p-image" placeholder="https://ik.imagekit.io/..."
+                        onchange="previewUrl(this.value)">
+                </div>
+
+                <div class="form-group"><label>Danh mục</label>
+                    <select id="p-category">
+                        <option value="">Chọn danh mục</option>
+                        <option value="sneaker">Sneaker</option>
+                        <option value="sandal">Sandal</option>
+                        <option value="sport">Thể Thao</option>
+                        <option value="heels">Cao Gót</option>
+                        <option value="loafer">Giày Lười</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Số lượng kho</label><input type="number" id="p-stock" min="0" value="0">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Lưu</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        async function loadProducts() {
+            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+
+            try {
+                const products = await productsAPI.getAll();
+                document.getElementById('products-tbody').innerHTML = products.map(p => `
+          <tr>
+            <td><img src="${p.image || 'https://via.placeholder.com/50'}" alt="${p.name}"></td>
+            <td>${p.name}</td>
+            <td>${p.category || '-'}</td>
+            <td>${formatPrice(p.price)}</td>
+            <td>${p.stock}</td>
+            <td>
+              <button class="btn btn-secondary" style="padding:0.25rem 0.5rem" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-danger" style="padding:0.25rem 0.5rem" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="6" style="text-align:center">Chưa có sản phẩm</td></tr>';
+            } catch (error) { showToast('Lỗi tải sản phẩm', 'error'); }
+        }
+
+        function showAddModal() {
+            document.getElementById('modal-title').textContent = 'Thêm Sản Phẩm';
+            document.getElementById('product-form').reset();
+            document.getElementById('product-id').value = '';
+            document.getElementById('product-modal').classList.add('active');
+        }
+
+        async function editProduct(id) {
+            try {
+                const p = await productsAPI.getById(id);
+                document.getElementById('modal-title').textContent = 'Sửa Sản Phẩm';
+                document.getElementById('product-id').value = id;
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-desc').value = p.description || '';
+                document.getElementById('p-price').value = p.price;
+                document.getElementById('p-image').value = p.image || '';
+                document.getElementById('p-category').value = p.category || '';
+                document.getElementById('p-stock').value = p.stock;
+                document.getElementById('product-modal').classList.add('active');
+            } catch (error) { showToast('Lỗi', 'error'); }
+        }
+
+        async function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const data = {
+                name: document.getElementById('p-name').value,
+                description: document.getElementById('p-desc').value,
+                price: parseFloat(document.getElementById('p-price').value),
+                image: document.getElementById('p-image').value,
+                category: document.getElementById('p-category').value,
+                stock: parseInt(document.getElementById('p-stock').value) || 0
+            };
+
+            try {
+                if (id) await productsAPI.update(id, data);
+                else await productsAPI.create(data);
+                showToast('Lưu thành công', 'success');
+                closeModal();
+                loadProducts();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Xóa sản phẩm này?')) return;
+            try {
+                await productsAPI.delete(id);
+                showToast('Đã xóa', 'success');
+                loadProducts();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        function closeModal() { document.getElementById('product-modal').classList.remove('active'); }
+
+        // Image upload to ImageKit
+        async function uploadImage(input) {
+            if (!input.files || !input.files[0]) return;
+
+            const file = input.files[0];
+            const btn = document.getElementById('upload-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.url) {
+                    document.getElementById('p-image').value = data.url;
+                    document.getElementById('p-image-preview').src = data.url;
+                    showToast('Tải ảnh thành công!', 'success');
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                showToast('Lỗi tải ảnh: ' + error.message, 'error');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-upload"></i> Tải ảnh lên';
+                btn.disabled = false;
+            }
+        }
+
+        function previewUrl(url) {
+            if (url) document.getElementById('p-image-preview').src = url;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
+</body>
+
+</html>

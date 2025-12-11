@@ -1,0 +1,252 @@
+/* Admin Dashboard Styles */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, #2d3436 0%, #1e272e 100%);
+    color: white;
+    padding: 1.5rem 0;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.admin-logo {
+    padding: 0 1.5rem;
+    margin-bottom: 2rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left-color: var(--primary);
+}
+
+.admin-nav a i {
+    width: 20px;
+    text-align: center;
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: 260px;
+    padding: 2rem;
+    background: #f5f6fa;
+    min-height: 100vh;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.admin-header h1 {
+    font-size: 1.75rem;
+    color: var(--dark);
+}
+
+.admin-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.admin-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.admin-card-icon.orders {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-card-icon.products {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.admin-card-icon.users {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.admin-card-icon.revenue {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.admin-card-info h3 {
+    font-size: 1.75rem;
+    color: var(--dark);
+}
+
+.admin-card-info p {
+    color: var(--gray);
+    font-size: 0.9rem;
+}
+
+.admin-table-container {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.admin-table-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-table-header h3 {
+    font-size: 1.1rem;
+}
+
+table.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.admin-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: var(--gray);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.admin-table tr:hover {
+    background: #f8f9fa;
+}
+
+.admin-table img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-pending {
+    background: #ffeaa7;
+    color: #d68910;
+}
+
+.badge-processing {
+    background: #81ecec;
+    color: #00a8a8;
+}
+
+.badge-shipped {
+    background: #a29bfe;
+    color: #6c5ce7;
+}
+
+.badge-delivered {
+    background: #55efc4;
+    color: #00b894;
+}
+
+.badge-cancelled {
+    background: #fab1a0;
+    color: #e17055;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 50px;
+}
+
+.notification-bell {
+    position: relative;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 350px;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+}
+
+.notification-dropdown.active {
+    display: block;
+}
+
+.notification-item {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-item.unread {
+    background: #e8f4fd;
+}

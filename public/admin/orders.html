@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Đơn Hàng - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">👟 Admin Panel</div>
+            <nav class="admin-nav">
+                <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html" class="active"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>Quản Lý Đơn Hàng</h1>
+                <div>
+                    <select id="status-filter" onchange="loadOrders()"
+                        style="padding:0.5rem 1rem;border-radius:var(--radius);border:1px solid #ddd">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="pending">Chờ xác nhận</option>
+                        <option value="processing">Đang xử lý</option>
+                        <option value="shipped">Đang giao</option>
+                        <option value="delivered">Đã giao</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Khách hàng</th>
+                            <th>SĐT</th>
+                            <th>Tổng</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="modal-overlay" id="order-modal" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width:600px">
+            <div class="modal-header">
+                <h2>Chi tiết đơn hàng #<span id="modal-order-id"></span></h2><button class="modal-close"
+                    onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        const statusLabels = { pending: 'Chờ xác nhận', processing: 'Đang xử lý', shipped: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
+
+        async function loadOrders() {
+            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+
+            const status = document.getElementById('status-filter').value;
+            const tbody = document.getElementById('orders-tbody');
+
+            try {
+                const orders = await adminAPI.getOrders({ status });
+                tbody.innerHTML = orders.map(o => `
+          <tr>
+            <td>#${o.id}</td>
+            <td>${o.User?.name || 'N/A'}</td>
+            <td>${o.shippingPhone || o.User?.phone || ''}</td>
+            <td>${formatPrice(o.total)}</td>
+            <td><span class="badge badge-${o.status}">${statusLabels[o.status]}</span></td>
+            <td>${formatDate(o.createdAt)}</td>
+            <td>
+              <button class="btn btn-secondary" style="padding:0.25rem 0.5rem" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i></button>
+              ${o.status !== 'delivered' && o.status !== 'cancelled' ? `
+                <select onchange="updateStatus(${o.id}, this.value)" style="padding:0.25rem;border-radius:4px">
+                  <option value="">Cập nhật...</option>
+                  <option value="processing">Xử lý</option>
+                  <option value="shipped">Giao hàng</option>
+                  <option value="delivered">Đã giao</option>
+                  <option value="cancelled">Hủy</option>
+                </select>
+              ` : ''}
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="7" style="text-align:center">Không có đơn hàng</td></tr>';
+            } catch (error) {
+                showToast('Lỗi tải đơn hàng', 'error');
+            }
+        }
+
+        async function viewOrder(id) {
+            try {
+                const order = await ordersAPI.getById(id);
+                document.getElementById('modal-order-id').textContent = id;
+                document.getElementById('modal-content').innerHTML = `
+          <p><strong>Người nhận:</strong> ${order.shippingName}</p>
+          <p><strong>SĐT:</strong> ${order.shippingPhone}</p>
+          <p><strong>Địa chỉ:</strong> ${order.shippingAddress}</p>
+          ${order.notes ? `<p><strong>Ghi chú:</strong> ${order.notes}</p>` : ''}
+          <hr style="margin:1rem 0">
+          <h4>Sản phẩm</h4>
+          ${order.OrderItems.map(item => `
+            <div style="display:flex;gap:1rem;padding:0.5rem 0;border-bottom:1px dashed #eee">
+              <img src="${item.productImage}" style="width:50px;height:50px;object-fit:cover;border-radius:4px">
+              <div style="flex:1"><strong>${item.productName}</strong><br>SL: ${item.quantity} x ${formatPrice(item.price)}</div>
+              <div>${formatPrice(item.quantity * item.price)}</div>
+            </div>
+          `).join('')}
+          ${order.discount > 0 ? `<p style="margin-top:1rem"><strong>Giảm giá:</strong> -${formatPrice(order.discount)}</p>` : ''}
+          <p style="font-size:1.2rem;font-weight:700;margin-top:1rem"><strong>Tổng:</strong> ${formatPrice(order.total)}</p>
+        `;
+                document.getElementById('order-modal').classList.add('active');
+                await adminAPI.markAsRead(id);
+            } catch (error) {
+                showToast('Lỗi tải chi tiết', 'error');
+            }
+        }
+
+        async function updateStatus(id, status) {
+            if (!status) return;
+            try {
+                await ordersAPI.updateStatus(id, status);
+                showToast('Cập nhật thành công', 'success');
+                loadOrders();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function closeModal() { document.getElementById('order-modal').classList.remove('active'); }
+
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>
+</body>
+
+</html>

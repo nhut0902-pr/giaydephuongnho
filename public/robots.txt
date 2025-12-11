@@ -1,0 +1,21 @@
+# Giày Dép Hương Nhớ - robots.txt
+# Cho phép tất cả bot crawl
+
+User-agent: *
+Allow: /
+
+# Cho phép Google crawl tất cả
+User-agent: Googlebot
+Allow: /
+
+# Sitemap location
+Sitemap: https://giaydephuongnho.com/sitemap.xml
+
+# Không crawl các trang admin
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+
+# Không crawl các file tĩnh không cần thiết
+Disallow: /js/
+Disallow: /css/

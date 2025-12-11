@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán - Giày Dép Hương Nhớ</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo"><span class="logo-icon">👟</span><span>Giày Dép Hương Nhớ</span></a>
+            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a></nav>
+            <div class="header-actions">
+                <div id="auth-section"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <h1>Thanh Toán</h1>
+    </div>
+
+    <div class="checkout-container container">
+        <div class="checkout-form">
+            <h3 style="margin-bottom:1.5rem"><i class="fas fa-truck"></i> Thông Tin Giao Hàng</h3>
+            <form id="checkout-form" onsubmit="handleCheckout(event)">
+                <div class="form-group">
+                    <label>Họ tên người nhận *</label>
+                    <input type="text" id="ship-name" required placeholder="Nguyễn Văn A">
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại *</label>
+                    <input type="tel" id="ship-phone" required placeholder="0123456789">
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ giao hàng *</label>
+                    <textarea id="ship-address" rows="3" required
+                        placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú</label>
+                    <textarea id="ship-notes" rows="2" placeholder="Ghi chú cho đơn hàng (không bắt buộc)"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="place-order-btn">
+                    <i class="fas fa-check"></i> Đặt Hàng
+                </button>
+            </form>
+        </div>
+
+        <div class="checkout-summary">
+            <h3 style="margin-bottom:1rem">Đơn Hàng</h3>
+            <div id="order-items"></div>
+            <div class="discount-form">
+                <input type="text" id="discount-code" placeholder="Mã giảm giá">
+                <button type="button" class="btn btn-secondary" onclick="applyDiscount()">Áp dụng</button>
+            </div>
+            <div id="discount-info" style="color:var(--success);margin-bottom:1rem;display:none"></div>
+            <div class="summary-item"><span>Tạm tính:</span><span id="subtotal">0đ</span></div>
+            <div class="summary-item" id="discount-row" style="display:none"><span>Giảm giá:</span><span
+                    id="discount-amount">0đ</span></div>
+            <div class="summary-item"><span>Phí vận chuyển:</span><span>Miễn phí</span></div>
+            <div class="summary-total"><span>Tổng:</span><span id="total">0đ</span></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let discountData = null;
+
+        async function initCheckout() {
+            if (!isLoggedIn()) {
+                sessionStorage.setItem('redirectAfterLogin', '/checkout.html');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            await loadCart();
+            if (cartItems.length === 0) {
+                window.location.href = '/cart.html';
+                return;
+            }
+
+            // Pre-fill user info
+            if (currentUser) {
+                document.getElementById('ship-name').value = currentUser.name || '';
+                document.getElementById('ship-phone').value = currentUser.phone || '';
+                document.getElementById('ship-address').value = currentUser.address || '';
+            }
+
+            renderOrderSummary();
+        }
+
+        function renderOrderSummary() {
+            const itemsEl = document.getElementById('order-items');
+            itemsEl.innerHTML = cartItems.map(item => {
+                const p = item.Product;
+                return `<div class="summary-item"><span>${p.name} x${item.quantity}</span><span>${formatPrice(p.price * item.quantity)}</span></div>`;
+            }).join('');
+
+            const subtotal = getCartTotal();
+            const discountAmount = discountData ? discountData.discountAmount : 0;
+            const total = subtotal - discountAmount;
+
+            document.getElementById('subtotal').textContent = formatPrice(subtotal);
+            document.getElementById('total').textContent = formatPrice(total);
+
+            if (discountData) {
+                document.getElementById('discount-row').style.display = 'flex';
+                document.getElementById('discount-amount').textContent = '-' + formatPrice(discountAmount);
+                document.getElementById('discount-info').textContent = `Áp dụng mã ${discountData.code} (-${discountData.percentage}%)`;
+                document.getElementById('discount-info').style.display = 'block';
+            }
+        }
+
+        async function applyDiscount() {
+            const code = document.getElementById('discount-code').value.trim();
+            if (!code) return;
+
+            try {
+                const subtotal = getCartTotal();
+                discountData = await discountsAPI.validate(code, subtotal);
+                showToast('Áp dụng mã giảm giá thành công!', 'success');
+                renderOrderSummary();
+            } catch (error) {
+                showToast(error.message, 'error');
+                discountData = null;
+                document.getElementById('discount-row').style.display = 'none';
+                document.getElementById('discount-info').style.display = 'none';
+                renderOrderSummary();
+            }
+        }
+
+        async function handleCheckout(e) {
+            e.preventDefault();
+            const btn = document.getElementById('place-order-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
+            try {
+                const orderData = {
+                    shippingName: document.getElementById('ship-name').value,
+                    shippingPhone: document.getElementById('ship-phone').value,
+                    shippingAddress: document.getElementById('ship-address').value,
+                    notes: document.getElementById('ship-notes').value,
+                    discountCode: discountData ? discountData.code : null
+                };
+
+                const order = await ordersAPI.create(orderData);
+                showToast('Đặt hàng thành công!', 'success');
+                setTimeout(() => window.location.href = '/orders.html', 1500);
+            } catch (error) {
+                showToast(error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Đặt Hàng';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initCheckout);
+    </script>
+</body>
+
+</html>

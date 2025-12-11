@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sản Phẩm - Giày Dép Hương Nhớ</title>
+    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo"><span class="logo-icon">👟</span><span>Giày Dép Hương Nhớ</span></a>
+            <nav class="nav">
+                <a href="/">Trang Chủ</a>
+                <a href="/products.html">Sản Phẩm</a>
+            </nav>
+            <div class="header-actions">
+                <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-bag"></i><span
+                        class="cart-count" id="cart-count">0</span></button>
+                <div id="auth-section"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <h1>Tất Cả Sản Phẩm</h1>
+        <p>Khám phá bộ sưu tập giày dép đa dạng</p>
+    </div>
+
+    <section class="container">
+        <div class="categories">
+            <button class="category-btn active" data-category="">Tất Cả</button>
+            <button class="category-btn" data-category="sneaker">Sneaker</button>
+            <button class="category-btn" data-category="sandal">Sandal</button>
+            <button class="category-btn" data-category="sport">Thể Thao</button>
+            <button class="category-btn" data-category="heels">Cao Gót</button>
+            <button class="category-btn" data-category="loafer">Giày Lười</button>
+        </div>
+        <div class="products-grid" id="products-grid">
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </section>
+
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fas fa-shopping-bag"></i> Giỏ Hàng</h3><button class="modal-close" onclick="toggleCart()"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cart-items"></div>
+        <div class="cart-footer">
+            <div class="cart-total"><span>Tổng:</span><span id="cart-total">0đ</span></div><a href="/cart.html"
+                class="btn btn-primary btn-block">Xem Giỏ Hàng</a>
+        </div>
+    </div>
+    <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="js/api.js?v=2"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/cart.js?v=2"></script>
+    <script src="js/main.js?v=2"></script>
+</body>
+
+</html>

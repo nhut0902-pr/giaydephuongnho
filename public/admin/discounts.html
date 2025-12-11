@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mã Giảm Giá - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">👟 Admin Panel</div>
+            <nav class="admin-nav">
+                <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html" class="active"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>Mã Giảm Giá</h1>
+                <button class="btn btn-primary" onclick="showAddModal()"><i class="fas fa-plus"></i> Tạo Mã</button>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Giảm (%)</th>
+                            <th>Đã dùng</th>
+                            <th>Hết hạn</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discounts-tbody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Discount Modal -->
+    <div class="modal-overlay" id="discount-modal" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modal-title">Tạo Mã Giảm Giá</h2><button class="modal-close" onclick="closeModal()"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <form id="discount-form" onsubmit="saveDiscount(event)">
+                <input type="hidden" id="discount-id">
+                <div class="form-group"><label>Mã giảm giá *</label><input type="text" id="d-code" required
+                        placeholder="VD: SALE50" style="text-transform:uppercase"></div>
+                <div class="form-group"><label>Phần trăm giảm (%) *</label><input type="number" id="d-percent" required
+                        min="1" max="100"></div>
+                <div class="form-group"><label>Giá trị đơn tối thiểu (VNĐ)</label><input type="number" id="d-min"
+                        min="0" value="0"></div>
+                <div class="form-group"><label>Giảm tối đa (VNĐ)</label><input type="number" id="d-max" min="0"
+                        placeholder="Để trống = không giới hạn"></div>
+                <div class="form-group"><label>Giới hạn lượt dùng</label><input type="number" id="d-limit" min="0"
+                        placeholder="Để trống = không giới hạn"></div>
+                <div class="form-group"><label>Ngày hết hạn</label><input type="date" id="d-expiry"></div>
+                <div class="form-group"><label><input type="checkbox" id="d-active" checked> Kích hoạt</label></div>
+                <button type="submit" class="btn btn-primary btn-block">Lưu</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        async function loadDiscounts() {
+            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+
+            try {
+                const discounts = await discountsAPI.getAll();
+                document.getElementById('discounts-tbody').innerHTML = discounts.map(d => {
+                    const expired = new Date(d.validTo) < new Date();
+                    return `
+            <tr>
+              <td><strong>${d.code}</strong></td>
+              <td>${d.percentage}%</td>
+              <td>${d.usedCount}${d.usageLimit ? '/' + d.usageLimit : ''}</td>
+              <td>${formatDate(d.validTo)}</td>
+              <td><span class="badge ${d.active && !expired ? 'badge-delivered' : 'badge-cancelled'}">${d.active && !expired ? 'Hoạt động' : expired ? 'Hết hạn' : 'Tắt'}</span></td>
+              <td>
+                <button class="btn btn-secondary" style="padding:0.25rem 0.5rem" onclick="editDiscount(${d.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger" style="padding:0.25rem 0.5rem" onclick="deleteDiscount(${d.id})"><i class="fas fa-trash"></i></button>
+              </td>
+            </tr>
+          `;
+                }).join('') || '<tr><td colspan="6" style="text-align:center">Chưa có mã giảm giá</td></tr>';
+            } catch (error) { showToast('Lỗi tải dữ liệu', 'error'); }
+        }
+
+        function showAddModal() {
+            document.getElementById('modal-title').textContent = 'Tạo Mã Giảm Giá';
+            document.getElementById('discount-form').reset();
+            document.getElementById('discount-id').value = '';
+            document.getElementById('d-active').checked = true;
+            const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 30);
+            document.getElementById('d-expiry').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('discount-modal').classList.add('active');
+        }
+
+        async function editDiscount(id) {
+            try {
+                const discounts = await discountsAPI.getAll();
+                const d = discounts.find(x => x.id === id);
+                if (!d) return;
+
+                document.getElementById('modal-title').textContent = 'Sửa Mã Giảm Giá';
+                document.getElementById('discount-id').value = id;
+                document.getElementById('d-code').value = d.code;
+                document.getElementById('d-percent').value = d.percentage;
+                document.getElementById('d-min').value = d.minOrderValue || 0;
+                document.getElementById('d-max').value = d.maxDiscount || '';
+                document.getElementById('d-limit').value = d.usageLimit || '';
+                document.getElementById('d-expiry').value = d.validTo ? new Date(d.validTo).toISOString().split('T')[0] : '';
+                document.getElementById('d-active').checked = d.active;
+                document.getElementById('discount-modal').classList.add('active');
+            } catch (error) { showToast('Lỗi', 'error'); }
+        }
+
+        async function saveDiscount(e) {
+            e.preventDefault();
+            const id = document.getElementById('discount-id').value;
+            const data = {
+                code: document.getElementById('d-code').value.toUpperCase(),
+                percentage: parseFloat(document.getElementById('d-percent').value),
+                minOrderValue: parseFloat(document.getElementById('d-min').value) || 0,
+                maxDiscount: parseFloat(document.getElementById('d-max').value) || null,
+                usageLimit: parseInt(document.getElementById('d-limit').value) || null,
+                validTo: document.getElementById('d-expiry').value || null,
+                active: document.getElementById('d-active').checked
+            };
+
+            try {
+                if (id) await discountsAPI.update(id, data);
+                else await discountsAPI.create(data);
+                showToast('Lưu thành công', 'success');
+                closeModal();
+                loadDiscounts();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        async function deleteDiscount(id) {
+            if (!confirm('Xóa mã này?')) return;
+            try {
+                await discountsAPI.delete(id);
+                showToast('Đã xóa', 'success');
+                loadDiscounts();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        function closeModal() { document.getElementById('discount-modal').classList.remove('active'); }
+
+        document.addEventListener('DOMContentLoaded', loadDiscounts);
+    </script>
+</body>
+
+</html>

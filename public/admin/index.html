@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Giày Dép Hương Nhớ</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">👟 Admin Panel</div>
+            <nav class="admin-nav">
+                <a href="/admin/" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>Dashboard</h1>
+                <div class="notification-bell" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notif-count" style="display:none">0</span>
+                    <div class="notification-dropdown" id="notif-dropdown">
+                        <div
+                            style="padding:1rem;border-bottom:1px solid #eee;display:flex;justify-content:space-between">
+                            <strong>Đơn hàng mới</strong>
+                            <a href="#" onclick="markAllRead()" style="color:var(--primary)">Đánh dấu đã đọc</a>
+                        </div>
+                        <div id="notif-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-cards">
+                <div class="admin-card">
+                    <div class="admin-card-icon orders"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="admin-card-info">
+                        <h3 id="stat-orders">0</h3>
+                        <p>Tổng đơn hàng</p>
+                    </div>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-icon products"><i class="fas fa-box"></i></div>
+                    <div class="admin-card-info">
+                        <h3 id="stat-products">0</h3>
+                        <p>Sản phẩm</p>
+                    </div>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-icon users"><i class="fas fa-users"></i></div>
+                    <div class="admin-card-info">
+                        <h3 id="stat-users">0</h3>
+                        <p>Khách hàng</p>
+                    </div>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-icon revenue"><i class="fas fa-coins"></i></div>
+                    <div class="admin-card-info">
+                        <h3 id="stat-revenue">0đ</h3>
+                        <p>Doanh thu tháng</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-table-container">
+                <div class="admin-table-header">
+                    <h3>Đơn hàng gần đây</h3>
+                    <a href="/admin/orders.html" class="btn btn-secondary" style="padding:0.5rem 1rem">Xem tất cả</a>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Khách hàng</th>
+                            <th>Tổng</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        let notifSound;
+        let lastNotifCount = 0;
+
+        async function loadDashboard() {
+            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+
+            try {
+                const stats = await adminAPI.getStats();
+                document.getElementById('stat-orders').textContent = stats.totalOrders;
+                document.getElementById('stat-products').textContent = stats.totalProducts;
+                document.getElementById('stat-users').textContent = stats.totalUsers;
+                document.getElementById('stat-revenue').textContent = formatPrice(stats.monthlyRevenue);
+
+                const tbody = document.getElementById('recent-orders');
+                tbody.innerHTML = stats.recentOrders.map(o => `
+          <tr>
+            <td>#${o.id}</td>
+            <td>${o.User?.name || 'N/A'}</td>
+            <td>${formatPrice(o.total)}</td>
+            <td><span class="badge badge-${o.status}">${o.status}</span></td>
+            <td>${formatDate(o.createdAt)}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" style="text-align:center">Chưa có đơn hàng</td></tr>';
+            } catch (error) {
+                showToast('Lỗi tải dữ liệu', 'error');
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const data = await adminAPI.getNotifications();
+                const badge = document.getElementById('notif-count');
+                const list = document.getElementById('notif-list');
+
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? 'block' : 'none';
+
+                if (data.count > lastNotifCount && lastNotifCount > 0) {
+                    playNotifSound();
+                    showToast(`Có ${data.count - lastNotifCount} đơn hàng mới!`, 'success');
+                }
+                lastNotifCount = data.count;
+
+                list.innerHTML = data.orders.length ? data.orders.map(o => `
+          <div class="notification-item unread" onclick="window.location.href='/admin/orders.html'">
+            <strong>Đơn #${o.id}</strong> - ${o.User?.name || 'Khách'}
+            <div style="color:var(--gray);font-size:0.85rem">${formatPrice(o.total)} - ${formatDate(o.createdAt)}</div>
+          </div>
+        `).join('') : '<div style="padding:2rem;text-align:center;color:var(--gray)">Không có thông báo mới</div>';
+            } catch (error) { }
+        }
+
+        function toggleNotifications() {
+            document.getElementById('notif-dropdown').classList.toggle('active');
+        }
+
+        async function markAllRead() {
+            try {
+                await adminAPI.markAllAsRead();
+                loadNotifications();
+            } catch (error) { }
+        }
+
+        function playNotifSound() {
+            try {
+                if (!notifSound) notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGEcBj+j2telezsPS5fP3rSTUCYzlsz');
+                notifSound.play();
+            } catch (e) { }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            loadNotifications();
+            setInterval(loadNotifications, 30000); // Poll every 30 seconds
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.notification-bell')) {
+                document.getElementById('notif-dropdown').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+
+</html>
