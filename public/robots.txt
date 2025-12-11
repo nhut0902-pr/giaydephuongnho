@@ -9,7 +9,7 @@ User-agent: Googlebot
 Allow: /
 
 # Sitemap location
-Sitemap: https://giaydephuongnho.com/sitemap.xml
+Sitemap: https://giaydephuongnho.vercel.app/sitemap.xml
 
 # Không crawl các trang admin
 User-agent: *
