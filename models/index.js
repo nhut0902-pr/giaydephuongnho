@@ -125,7 +125,7 @@ const DiscountCode = sequelize.define('DiscountCode', {
     },
     // New fields for user-specific discounts
     type: {
-        type: DataTypes.ENUM('public', 'user_specific'),
+        type: DataTypes.STRING,
         defaultValue: 'public'
     },
     assignedUserId: {
@@ -169,7 +169,7 @@ const PushSubscription = sequelize.define('PushSubscription', {
         type: DataTypes.STRING
     },
     role: {
-        type: DataTypes.ENUM('customer', 'admin'),
+        type: DataTypes.STRING,
         defaultValue: 'customer'
     }
 });
