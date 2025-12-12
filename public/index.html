@@ -99,28 +99,37 @@
     <a href="/products.html" class="hero-btn">Khám Phá Ngay</a>
   </section>
 
-  <!-- Featured Products -->
-  <section class="container">
-    <div class="section-title">
-      <h2>Sản Phẩm Nổi Bật</h2>
-      <p>Những mẫu giày dép được yêu thích nhất</p>
-    </div>
-
-    <div class="categories">
-      <button class="category-btn active" data-category="">Tất Cả</button>
-      <button class="category-btn" data-category="sneaker">Sneaker</button>
-      <button class="category-btn" data-category="sandal">Sandal</button>
-      <button class="category-btn" data-category="sport">Thể Thao</button>
-      <button class="category-btn" data-category="heels">Cao Gót</button>
-      <button class="category-btn" data-category="loafer">Giày Lười</button>
-    </div>
-
-    <div class="products-grid" id="products-grid">
-      <!-- Products will be loaded here -->
-      <div class="loading">
-        <div class="spinner"></div>
+  <!-- Flash Sale Section -->
+  <section class="flash-sale-section" id="flash-sale">
+    <div class="container">
+      <div class="flash-sale-header">
+        <div class="flash-sale-title">
+          <i class="fas fa-bolt"></i> FLASH SALE
+        </div>
+        <div class="flash-sale-timer">
+          <span>Kết thúc trong:</span>
+          <div class="countdown">
+            <div class="countdown-item"><span id="hours">00</span></div> :
+            <div class="countdown-item"><span id="minutes">00</span></div> :
+            <div class="countdown-item"><span id="seconds">00</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="product-grid" id="flash-sale-products">
+        <!-- Flash sale products will be loaded here -->
       </div>
     </div>
+  </section>
+
+  <!-- Featured Products -->
+  </div>
+
+  <div class="products-grid" id="products-grid">
+    <!-- Products will be loaded here -->
+    <div class="loading">
+      <div class="spinner"></div>
+    </div>
+  </div>
   </section>
 
   <!-- Footer -->

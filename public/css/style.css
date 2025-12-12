@@ -1390,3 +1390,221 @@ a {
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
 }
+
+/* Flash Sale Section */
+.flash-sale-section {
+  background: white;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.flash-sale-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.flash-sale-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.flash-sale-title i {
+  animation: flash 1s infinite alternate;
+}
+
+@keyframes flash {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.flash-sale-timer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.countdown-item {
+  background: var(--dark);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Mobile Responsiveness for Flash Sale */
+@media (max-width: 768px) {
+  .flash-sale-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .flash-sale-title {
+    font-size: 1.5rem;
+  }
+
+  .flash-sale-timer {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+
+  /* Header */
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  .header-container {
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-size: 1.25rem;
+  }
+
+  .logo img {
+    height: 32px;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    margin-top: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    gap: 1rem;
+    display: none;
+    /* Hide nav by default on mobile, toggle with JS if needed, or keep simple */
+  }
+
+  .nav.active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 3rem 1rem;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  /* Product Grid - 2 Columns */
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .product-info {
+    padding: 0.75rem;
+  }
+
+  .product-name {
+    font-size: 0.9rem;
+  }
+
+  .add-to-cart {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  /* Cart Sidebar */
+  .cart-sidebar {
+    width: 100%;
+    right: -100%;
+  }
+
+  /* Flash Sale Mobile */
+  .flash-sale-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .flash-sale-title {
+    font-size: 1.25rem;
+  }
+
+  .flash-sale-timer {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 0.9rem;
+  }
+
+  .countdown {
+    font-size: 1rem;
+  }
+
+  .countdown-item {
+    min-width: 30px;
+    padding: 0.1rem 0.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    /* Keep 2 columns even on small screens */
+    gap: 0.5rem;
+  }
+
+  .product-card {
+    border-radius: 8px;
+  }
+
+  .product-info {
+    padding: 0.5rem;
+  }
+
+  .product-meta {
+    display: none;
+    /* Hide meta info on very small screens to save space */
+  }
+
+  .add-to-cart {
+    font-size: 0.8rem;
+    padding: 0.4rem;
+  }
+
+  .add-to-cart i {
+    display: none;
+    /* Hide icon to save space */
+  }
+}
