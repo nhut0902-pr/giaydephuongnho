@@ -15,6 +15,7 @@ const orderRoutes = require('./routes/orders');
 const discountRoutes = require('./routes/discounts');
 const adminRoutes = require('./routes/admin');
 const pushRoutes = require('./routes/push');
+const invoiceRoutes = require('./routes/invoice');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -99,6 +100,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/invoice', invoiceRoutes);
 
 // Dynamic Sitemap.xml for SEO
 app.get('/sitemap.xml', async (req, res) => {

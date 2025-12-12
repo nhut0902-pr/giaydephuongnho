@@ -103,7 +103,10 @@
                 <span>Tổng cộng:</span>
                 <span style="color:var(--primary-dark)">${formatPrice(order.total)}</span>
               </div>
-              ${order.status === 'pending' ? `<button class="btn btn-danger" style="margin-top:1rem" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Hủy đơn</button>` : ''}
+              <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+                ${order.status === 'pending' ? `<button class="btn btn-danger" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Hủy đơn</button>` : ''}
+                <button class="btn btn-secondary" onclick="downloadInvoice(${order.id})"><i class="fas fa-file-pdf"></i> Tải hóa đơn</button>
+              </div>
             </div>
           </div>
         `).join('');
@@ -121,6 +124,19 @@
             } catch (error) {
                 showToast(error.message, 'error');
             }
+        }
+
+        function downloadInvoice(orderId) {
+            const token = localStorage.getItem('token');
+            // Open in new window with auth header via form submission
+            const link = document.createElement('a');
+            link.href = `/api/invoice/${orderId}?token=${token}`;
+            link.download = `hoadon-${orderId}.pdf`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Đang tải hóa đơn...', 'success');
         }
 
         document.addEventListener('DOMContentLoaded', loadOrders);
