@@ -1,6 +1,8 @@
 // Cart State Management
 const LOCAL_CART_KEY = 'giaydephuongnho_cart';
 let cartItems = [];
+let cartLoaded = false;
+let cartLoadPromise = null;
 
 async function initCart() {
     await loadCart();
@@ -8,15 +10,25 @@ async function initCart() {
 }
 
 async function loadCart() {
-    if (isLoggedIn()) {
-        try {
-            cartItems = await cartAPI.get();
-        } catch (error) {
-            cartItems = [];
+    // Prevent duplicate loading
+    if (cartLoadPromise) return cartLoadPromise;
+    if (cartLoaded && cartItems.length > 0) return;
+
+    cartLoadPromise = (async () => {
+        if (isLoggedIn()) {
+            try {
+                cartItems = await cartAPI.get();
+            } catch (error) {
+                cartItems = [];
+            }
+        } else {
+            cartItems = getLocalCart();
         }
-    } else {
-        cartItems = getLocalCart();
-    }
+        cartLoaded = true;
+        cartLoadPromise = null;
+    })();
+
+    await cartLoadPromise;
 }
 
 function getLocalCart() {
@@ -39,6 +51,7 @@ async function addToCart(productId, quantity = 1, product = null) {
     try {
         if (isLoggedIn()) {
             await cartAPI.add(productId, quantity);
+            cartLoaded = false; // Reset cache
             await loadCart();
         } else {
             const localCart = getLocalCart();
@@ -65,6 +78,7 @@ async function updateCartItem(itemId, quantity) {
         if (isLoggedIn()) {
             if (quantity <= 0) await cartAPI.remove(itemId);
             else await cartAPI.update(itemId, quantity);
+            cartLoaded = false; // Reset cache
             await loadCart();
         } else {
             let localCart = getLocalCart();
@@ -86,6 +100,7 @@ async function removeFromCart(itemId) {
     try {
         if (isLoggedIn()) {
             await cartAPI.remove(itemId);
+            cartLoaded = false; // Reset cache
             await loadCart();
         } else {
             let localCart = getLocalCart();
