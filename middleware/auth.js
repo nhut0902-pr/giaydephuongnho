@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
-const JWT_SECRET = 'giaydephuongnho_secret_key_2024';
+// Use environment variable with fallback for backwards compatibility
+const JWT_SECRET = process.env.JWT_SECRET || 'giaydephuongnho_secret_key_2024';
 
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];

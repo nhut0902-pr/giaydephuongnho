@@ -18,7 +18,7 @@ const pushRoutes = require('./routes/push');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'giaydephuongnho_secret_key_2024';
 
 // Google OAuth Config
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
