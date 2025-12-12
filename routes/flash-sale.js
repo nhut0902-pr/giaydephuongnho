@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { FlashSale, FlashSaleItem, Product } = require('../models');
-const { authenticateToken, isAdmin } = require('./auth');
+const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
 // GET /api/flash-sale/current (Public)
