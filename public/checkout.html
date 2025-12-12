@@ -25,7 +25,13 @@
     </div>
 
     <div class="checkout-container container">
-        <div class="checkout-form">
+        <!-- Loading indicator -->
+        <div id="checkout-loader" style="text-align:center;padding:3rem">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p style="margin-top:1rem">Đang tải đơn hàng...</p>
+        </div>
+
+        <div class="checkout-form" id="checkout-form-wrapper" style="display:none">
             <h3 style="margin-bottom:1.5rem"><i class="fas fa-truck"></i> Thông Tin Giao Hàng</h3>
             <form id="checkout-form" onsubmit="handleCheckout(event)">
                 <div class="form-group">
@@ -51,7 +57,7 @@
             </form>
         </div>
 
-        <div class="checkout-summary">
+        <div class="checkout-summary" id="checkout-summary-wrapper" style="display:none">
             <h3 style="margin-bottom:1rem">Đơn Hàng</h3>
             <div id="order-items"></div>
             <div class="discount-form">
@@ -95,6 +101,11 @@
                 document.getElementById('ship-phone').value = currentUser.phone || '';
                 document.getElementById('ship-address').value = currentUser.address || '';
             }
+
+            // Hide loader and show content
+            document.getElementById('checkout-loader').style.display = 'none';
+            document.getElementById('checkout-form-wrapper').style.display = 'block';
+            document.getElementById('checkout-summary-wrapper').style.display = 'block';
 
             renderOrderSummary();
         }
