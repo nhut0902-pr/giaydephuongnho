@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Người Dùng - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">👟 Admin Panel</div>
+            <nav class="admin-nav">
+                <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/admin/users.html" class="active"><i class="fas fa-users"></i> Người Dùng</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>Quản Lý Người Dùng</h1>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên</th>
+                            <th>Email</th>
+                            <th>SĐT</th>
+                            <th>Vai trò</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Assign Voucher Modal -->
+    <div class="modal-overlay" id="voucher-modal" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Gán Voucher Riêng</h2>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="voucher-form" onsubmit="assignVoucher(event)">
+                <input type="hidden" id="v-userId">
+                <p id="v-userName" style="margin-bottom:1rem;font-weight:600"></p>
+                <div class="form-group">
+                    <label>Mã giảm giá *</label>
+                    <input type="text" id="v-code" required placeholder="VD: USER50" style="text-transform:uppercase">
+                </div>
+                <div class="form-group">
+                    <label>Phần trăm giảm (%) *</label>
+                    <input type="number" id="v-percent" required min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Ngày hết hạn</label>
+                    <input type="date" id="v-expiry">
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="v-notify" checked> Gửi thông báo cho người dùng</label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Tạo & Gán Voucher</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        async function loadUsers() {
+            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const users = await response.json();
+
+                document.getElementById('users-tbody').innerHTML = users.map(u => `
+                    <tr>
+                        <td>${u.id}</td>
+                        <td><strong>${u.name}</strong></td>
+                        <td>${u.email}</td>
+                        <td>${u.phone || '-'}</td>
+                        <td><span class="badge ${u.role === 'admin' ? 'badge-delivered' : 'badge-pending'}">${u.role}</span></td>
+                        <td>${formatDate(u.createdAt)}</td>
+                        <td>
+                            <button class="btn btn-primary" style="padding:0.25rem 0.5rem" onclick="showVoucherModal(${u.id}, '${u.name}')">
+                                <i class="fas fa-gift"></i> Gán Voucher
+                            </button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="7" style="text-align:center">Chưa có người dùng</td></tr>';
+            } catch (error) {
+                showToast('Lỗi tải dữ liệu', 'error');
+            }
+        }
+
+        function showVoucherModal(userId, userName) {
+            document.getElementById('v-userId').value = userId;
+            document.getElementById('v-userName').textContent = `Gán voucher cho: ${userName}`;
+            document.getElementById('voucher-form').reset();
+            document.getElementById('v-notify').checked = true;
+            const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 30);
+            document.getElementById('v-expiry').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('voucher-modal').classList.add('active');
+        }
+
+        async function assignVoucher(e) {
+            e.preventDefault();
+            const data = {
+                code: document.getElementById('v-code').value.toUpperCase(),
+                percentage: parseFloat(document.getElementById('v-percent').value),
+                validTo: document.getElementById('v-expiry').value || null,
+                type: 'user_specific',
+                assignedUserId: parseInt(document.getElementById('v-userId').value),
+                notifyUsers: document.getElementById('v-notify').checked
+            };
+
+            try {
+                await discountsAPI.create(data);
+                showToast('Đã tạo và gán voucher thành công!', 'success');
+                closeModal();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('voucher-modal').classList.remove('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+
+</html>

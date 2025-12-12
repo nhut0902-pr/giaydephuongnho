@@ -50,7 +50,7 @@
 
     <!-- Discount Modal -->
     <div class="modal-overlay" id="discount-modal" onclick="closeModal()">
-        <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal" onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto">
             <div class="modal-header">
                 <h2 id="modal-title">Tạo Mã Giảm Giá</h2><button class="modal-close" onclick="closeModal()"><i
                         class="fas fa-times"></i></button>
@@ -68,6 +68,23 @@
                 <div class="form-group"><label>Giới hạn lượt dùng</label><input type="number" id="d-limit" min="0"
                         placeholder="Để trống = không giới hạn"></div>
                 <div class="form-group"><label>Ngày hết hạn</label><input type="date" id="d-expiry"></div>
+
+                <!-- New options -->
+                <div class="form-group">
+                    <label>Loại mã</label>
+                    <select id="d-type" onchange="toggleUserSelect()">
+                        <option value="public">Công khai (tất cả ai cũng dùng được)</option>
+                        <option value="user_specific">Riêng cho người dùng cụ thể</option>
+                    </select>
+                </div>
+                <div class="form-group" id="user-select-group" style="display:none">
+                    <label>Chọn người dùng</label>
+                    <select id="d-user"></select>
+                </div>
+                <div class="form-group"><label><input type="checkbox" id="d-display"> Hiển thị banner trên trang
+                        chủ</label></div>
+                <div class="form-group"><label><input type="checkbox" id="d-notify" checked> Gửi thông báo cho người
+                        dùng</label></div>
                 <div class="form-group"><label><input type="checkbox" id="d-active" checked> Kích hoạt</label></div>
                 <button type="submit" class="btn btn-primary btn-block">Lưu</button>
             </form>
@@ -112,6 +129,24 @@
             const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 30);
             document.getElementById('d-expiry').value = tomorrow.toISOString().split('T')[0];
             document.getElementById('discount-modal').classList.add('active');
+            loadUsersForSelect();
+        }
+
+        async function loadUsersForSelect() {
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const users = await response.json();
+                document.getElementById('d-user').innerHTML = users.map(u =>
+                    `<option value="${u.id}">${u.name} (${u.email})</option>`
+                ).join('');
+            } catch (e) { console.log('Load users failed'); }
+        }
+
+        function toggleUserSelect() {
+            const type = document.getElementById('d-type').value;
+            document.getElementById('user-select-group').style.display = type === 'user_specific' ? 'block' : 'none';
         }
 
         async function editDiscount(id) {
@@ -128,7 +163,15 @@
                 document.getElementById('d-max').value = d.maxDiscount || '';
                 document.getElementById('d-limit').value = d.usageLimit || '';
                 document.getElementById('d-expiry').value = d.validTo ? new Date(d.validTo).toISOString().split('T')[0] : '';
+                document.getElementById('d-type').value = d.type || 'public';
+                document.getElementById('d-display').checked = d.displayOnHomepage || false;
+                document.getElementById('d-notify').checked = false; // Don't re-notify on edit
                 document.getElementById('d-active').checked = d.active;
+                toggleUserSelect();
+                loadUsersForSelect();
+                if (d.assignedUserId) {
+                    setTimeout(() => document.getElementById('d-user').value = d.assignedUserId, 100);
+                }
                 document.getElementById('discount-modal').classList.add('active');
             } catch (error) { showToast('Lỗi', 'error'); }
         }
@@ -136,6 +179,7 @@
         async function saveDiscount(e) {
             e.preventDefault();
             const id = document.getElementById('discount-id').value;
+            const type = document.getElementById('d-type').value;
             const data = {
                 code: document.getElementById('d-code').value.toUpperCase(),
                 percentage: parseFloat(document.getElementById('d-percent').value),
@@ -143,7 +187,11 @@
                 maxDiscount: parseFloat(document.getElementById('d-max').value) || null,
                 usageLimit: parseInt(document.getElementById('d-limit').value) || null,
                 validTo: document.getElementById('d-expiry').value || null,
-                active: document.getElementById('d-active').checked
+                active: document.getElementById('d-active').checked,
+                type,
+                assignedUserId: type === 'user_specific' ? parseInt(document.getElementById('d-user').value) : null,
+                displayOnHomepage: document.getElementById('d-display').checked,
+                notifyUsers: document.getElementById('d-notify').checked
             };
 
             try {

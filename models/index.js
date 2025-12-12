@@ -122,6 +122,55 @@ const DiscountCode = sequelize.define('DiscountCode', {
     usedCount: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    // New fields for user-specific discounts
+    type: {
+        type: DataTypes.ENUM('public', 'user_specific'),
+        defaultValue: 'public'
+    },
+    assignedUserId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    displayOnHomepage: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    notifyUsers: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    }
+});
+
+// Push Subscription Model (for Web Push Notifications)
+const PushSubscription = sequelize.define('PushSubscription', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: true // null for anonymous users
+    },
+    endpoint: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    p256dh: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    auth: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    userAgent: {
+        type: DataTypes.STRING
+    },
+    role: {
+        type: DataTypes.ENUM('customer', 'admin'),
+        defaultValue: 'customer'
     }
 });
 
@@ -230,6 +279,14 @@ OrderItem.belongsTo(Product);
 Product.belongsToMany(DiscountCode, { through: ProductDiscount });
 DiscountCode.belongsToMany(Product, { through: ProductDiscount });
 
+// User <-> PushSubscription
+User.hasMany(PushSubscription);
+PushSubscription.belongsTo(User);
+
+// User <-> DiscountCode (for user-specific discounts)
+User.hasMany(DiscountCode, { foreignKey: 'assignedUserId', as: 'assignedDiscounts' });
+DiscountCode.belongsTo(User, { foreignKey: 'assignedUserId', as: 'assignedUser' });
+
 module.exports = {
     sequelize,
     User,
@@ -238,5 +295,6 @@ module.exports = {
     Order,
     OrderItem,
     Cart,
-    ProductDiscount
+    ProductDiscount,
+    PushSubscription
 };

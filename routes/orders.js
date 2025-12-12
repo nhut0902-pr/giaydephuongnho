@@ -1,7 +1,8 @@
 const express = require('express');
-const { Order, OrderItem, Cart, Product, DiscountCode } = require('../models');
+const { Order, OrderItem, Cart, Product, DiscountCode, PushSubscription, User } = require('../models');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const pushRoutes = require('./push');
 
 const router = express.Router();
 
@@ -144,6 +145,16 @@ router.post('/', authenticateToken, async (req, res) => {
             include: [{ model: OrderItem }]
         });
 
+        // Send push notification to admins
+        try {
+            await pushRoutes.sendToAdmins({
+                title: '🛒 Đơn Hàng Mới!',
+                body: `${shippingName} đã đặt đơn ${(total - discount).toLocaleString('vi-VN')}đ`,
+                icon: '/images/logo.jpg',
+                data: { url: `/admin/orders.html`, orderId: order.id }
+            });
+        } catch (e) { console.log('Push notification failed:', e); }
+
         res.status(201).json(completeOrder);
     } catch (error) {
         console.error('Create order error:', error);
@@ -167,6 +178,22 @@ router.put('/:id', authenticateToken, isAdmin, async (req, res) => {
         const updatedOrder = await Order.findByPk(order.id, {
             include: [{ model: OrderItem }]
         });
+
+        // Send push notification to user about status change
+        const statusTexts = {
+            'processing': 'đang được xử lý',
+            'shipped': 'đang được giao',
+            'delivered': 'đã giao thành công',
+            'cancelled': 'đã bị hủy'
+        };
+        try {
+            await pushRoutes.sendToUser(order.UserId, {
+                title: '📦 Cập Nhật Đơn Hàng',
+                body: `Đơn hàng #${order.id} ${statusTexts[status] || status}`,
+                icon: '/images/logo.jpg',
+                data: { url: `/orders.html`, orderId: order.id }
+            });
+        } catch (e) { console.log('Push notification failed:', e); }
 
         res.json(updatedOrder);
     } catch (error) {

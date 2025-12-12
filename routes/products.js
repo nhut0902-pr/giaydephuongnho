@@ -2,6 +2,7 @@ const express = require('express');
 const { Product, DiscountCode } = require('../models');
 const { authenticateToken, isAdmin, optionalAuth } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const pushRoutes = require('./push');
 
 const router = express.Router();
 
@@ -118,6 +119,17 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
             category,
             stock
         });
+
+        // Send push notification to all customers about new product
+        try {
+            await pushRoutes.sendToAllCustomers({
+                title: '✨ Sản Phẩm Mới!',
+                body: name,
+                icon: image || '/images/logo.jpg',
+                image: image,
+                data: { url: `/product-detail.html?id=${product.id}`, productId: product.id }
+            });
+        } catch (e) { console.log('Push notification failed:', e); }
 
         res.status(201).json(product);
     } catch (error) {

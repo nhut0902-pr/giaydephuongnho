@@ -1,7 +1,8 @@
 const express = require('express');
-const { DiscountCode, Product, ProductDiscount } = require('../models');
+const { DiscountCode, Product, ProductDiscount, User } = require('../models');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const pushRoutes = require('./push');
 
 const router = express.Router();
 
@@ -69,7 +70,7 @@ router.post('/validate', async (req, res) => {
 // Create discount code (admin only)
 router.post('/', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const { code, percentage, validFrom, validTo, minOrderValue, maxDiscount, usageLimit, productIds } = req.body;
+        const { code, percentage, validFrom, validTo, minOrderValue, maxDiscount, usageLimit, productIds, type, assignedUserId, displayOnHomepage, notifyUsers } = req.body;
 
         // Check if code already exists
         const existingCode = await DiscountCode.findOne({ where: { code } });
@@ -81,11 +82,15 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
             code: code.toUpperCase(),
             percentage,
             validFrom: validFrom || new Date(),
-            validTo: validTo || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
+            validTo: validTo || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             minOrderValue: minOrderValue || 0,
             maxDiscount,
             usageLimit,
-            active: true
+            active: true,
+            type: type || 'public',
+            assignedUserId: type === 'user_specific' ? assignedUserId : null,
+            displayOnHomepage: displayOnHomepage || false,
+            notifyUsers: notifyUsers || false
         });
 
         // Associate with products if specified
@@ -94,8 +99,29 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
             await discount.setProducts(products);
         }
 
+        // Send push notification if requested
+        if (notifyUsers) {
+            try {
+                const payload = {
+                    title: '🎉 Mã Giảm Giá Mới!',
+                    body: `Giảm ${percentage}% với mã ${code.toUpperCase()}`,
+                    icon: '/images/logo.jpg',
+                    data: { url: '/products.html', code: code.toUpperCase() }
+                };
+
+                if (type === 'user_specific' && assignedUserId) {
+                    await pushRoutes.sendToUser(assignedUserId, payload);
+                } else {
+                    await pushRoutes.sendToAllCustomers(payload);
+                }
+            } catch (e) { console.log('Push notification failed:', e); }
+        }
+
         const createdDiscount = await DiscountCode.findByPk(discount.id, {
-            include: [{ model: Product, attributes: ['id', 'name'] }]
+            include: [
+                { model: Product, attributes: ['id', 'name'] },
+                { model: User, as: 'assignedUser', attributes: ['id', 'name', 'email'] }
+            ]
         });
 
         res.status(201).json(createdDiscount);
