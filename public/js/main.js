@@ -72,14 +72,18 @@ async function initFlashSale() {
   try {
     const response = await fetch('/api/flash-sale/current');
     const data = await response.json();
+    console.log('Flash Sale Data:', data);
 
     if (!data.active || !data.data) {
+      console.log('Flash Sale inactive or no data');
       section.style.display = 'none';
       return;
     }
 
     const flashSale = data.data;
     const targetDate = new Date(flashSale.endTime);
+    console.log('Target Date:', targetDate);
+    console.log('Current Time:', new Date());
 
     // Update countdown
     const timerInterval = setInterval(() => {
