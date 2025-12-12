@@ -12,8 +12,13 @@
 
 <body>
     <div class="admin-layout">
-        <aside class="admin-sidebar">
-            <div class="admin-logo">👟 Admin Panel</div>
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-logo">
+                <span class="admin-close-btn" onclick="toggleSidebar()"
+                    style="display:none;cursor:pointer;margin-right:10px"><i class="fas fa-times"></i></span>
+                👟 Admin Panel
+            </div>
             <nav class="admin-nav">
                 <a href="/admin/" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
                 <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
@@ -27,7 +32,10 @@
 
         <main class="admin-main">
             <div class="admin-header">
-                <h1>Dashboard</h1>
+                <div style="display:flex;align-items:center">
+                    <i class="fas fa-bars admin-toggle" onclick="toggleSidebar()" style="display:none"></i>
+                    <h1>Dashboard</h1>
+                </div>
                 <div class="notification-bell" onclick="toggleNotifications()">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge" id="notif-count" style="display:none">0</span>
@@ -181,6 +189,11 @@
                 document.getElementById('notif-dropdown').classList.remove('active');
             }
         });
+
+        function toggleSidebar() {
+            document.getElementById('admin-sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
     </script>
 </body>
 

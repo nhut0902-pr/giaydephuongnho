@@ -12,13 +12,19 @@
 
 <body>
     <div class="admin-layout">
-        <aside class="admin-sidebar">
-            <div class="admin-logo">👟 Admin Panel</div>
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-logo">
+                <span class="admin-close-btn" onclick="toggleSidebar()"
+                    style="display:none;cursor:pointer;margin-right:10px"><i class="fas fa-times"></i></span>
+                👟 Admin Panel
+            </div>
             <nav class="admin-nav">
                 <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
                 <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
                 <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
                 <a href="/admin/discounts.html" class="active"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/admin/users.html"><i class="fas fa-users"></i> Người Dùng</a>
                 <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
                 <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
             </nav>
@@ -26,7 +32,10 @@
 
         <main class="admin-main">
             <div class="admin-header">
-                <h1>Mã Giảm Giá</h1>
+                <div style="display:flex;align-items:center">
+                    <i class="fas fa-bars admin-toggle" onclick="toggleSidebar()" style="display:none"></i>
+                    <h1>Mã Giảm Giá</h1>
+                </div>
                 <button class="btn btn-primary" onclick="showAddModal()"><i class="fas fa-plus"></i> Tạo Mã</button>
             </div>
 
@@ -213,8 +222,13 @@
         }
 
         function closeModal() { document.getElementById('discount-modal').classList.remove('active'); }
+        function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('active'); }
 
         document.addEventListener('DOMContentLoaded', loadDiscounts);
+        function toggleSidebar() {
+            document.getElementById('admin-sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
     </script>
 </body>
 
