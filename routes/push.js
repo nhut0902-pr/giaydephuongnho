@@ -5,12 +5,20 @@ const { authenticateToken, isAdmin, optionalAuth } = require('../middleware/auth
 
 const router = express.Router();
 
-// Configure VAPID
-webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:admin@giaydephuongnho.com',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-);
+// Check if VAPID keys are configured
+const VAPID_CONFIGURED = process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY;
+
+// Configure VAPID only if keys are available
+if (VAPID_CONFIGURED) {
+    webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT || 'mailto:admin@giaydephuongnho.com',
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+    console.log('Web Push configured successfully');
+} else {
+    console.warn('VAPID keys not configured. Push notifications will be disabled.');
+}
 
 // Get VAPID public key (for client)
 router.get('/vapid-public-key', (req, res) => {
@@ -71,6 +79,12 @@ router.delete('/unsubscribe', async (req, res) => {
 
 // Helper function to send push notification
 async function sendPushNotification(subscription, payload) {
+    // Skip if VAPID not configured
+    if (!VAPID_CONFIGURED) {
+        console.log('Push skipped: VAPID not configured');
+        return { success: false, error: 'VAPID not configured' };
+    }
+
     const pushSubscription = {
         endpoint: subscription.endpoint,
         keys: {
