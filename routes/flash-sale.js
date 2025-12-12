@@ -8,6 +8,8 @@ const { Op } = require('sequelize');
 router.get('/current', async (req, res) => {
     try {
         const now = new Date();
+        console.log('Current Server Time (UTC):', now.toISOString());
+
         const flashSale = await FlashSale.findOne({
             where: {
                 isActive: true,
@@ -21,6 +23,16 @@ router.get('/current', async (req, res) => {
         });
 
         if (!flashSale) {
+            // Debug: Check if there are any active sales that failed the time check
+            const anyActive = await FlashSale.findOne({ where: { isActive: true } });
+            if (anyActive) {
+                console.log('Found active sale but time mismatch:', {
+                    saleId: anyActive.id,
+                    start: anyActive.startTime,
+                    end: anyActive.endTime,
+                    now: now
+                });
+            }
             return res.json({ active: false });
         }
 

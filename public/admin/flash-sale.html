@@ -195,10 +195,18 @@
 
         async function saveFlashSale(e) {
             e.preventDefault();
+
+            const startInput = document.getElementById('fs-start').value;
+            const endInput = document.getElementById('fs-end').value;
+
+            // Convert local input to ISO string (UTC)
+            const startTime = new Date(startInput).toISOString();
+            const endTime = new Date(endInput).toISOString();
+
             const data = {
                 name: document.getElementById('fs-name').value,
-                startTime: document.getElementById('fs-start').value,
-                endTime: document.getElementById('fs-end').value,
+                startTime: startTime,
+                endTime: endTime,
                 isActive: document.getElementById('fs-active').checked
             };
 
