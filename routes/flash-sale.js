@@ -10,12 +10,13 @@ router.get('/current', async (req, res) => {
         const now = new Date();
         console.log('Current Server Time (UTC):', now.toISOString());
 
+        // Find any active flash sale that hasn't ended yet
         const flashSale = await FlashSale.findOne({
             where: {
                 isActive: true,
-                startTime: { [Op.lte]: now },
                 endTime: { [Op.gte]: now }
             },
+            order: [['startTime', 'ASC']], // Get the one starting soonest or already started
             include: [{
                 model: FlashSaleItem,
                 include: [Product]
@@ -23,17 +24,12 @@ router.get('/current', async (req, res) => {
         });
 
         if (!flashSale) {
-            // Debug: Check if there are any active sales that failed the time check
-            const anyActive = await FlashSale.findOne({ where: { isActive: true } });
-            if (anyActive) {
-                console.log('Found active sale but time mismatch:', {
-                    saleId: anyActive.id,
-                    start: anyActive.startTime,
-                    end: anyActive.endTime,
-                    now: now
-                });
-            }
-            return res.json({ active: false });
+            return res.json({ active: false, reason: 'No active sale found' });
+        }
+
+        // Check if it has started
+        if (new Date(flashSale.startTime) > now) {
+            return res.json({ active: false, reason: 'Sale has not started yet', startTime: flashSale.startTime });
         }
 
         res.json({ active: true, data: flashSale });
