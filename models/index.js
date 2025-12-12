@@ -259,6 +259,52 @@ const ProductDiscount = sequelize.define('ProductDiscount', {
     }
 });
 
+// Flash Sale Model
+const FlashSale = sequelize.define('FlashSale', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    name: {
+        type: DataTypes.STRING,
+        defaultValue: 'Flash Sale'
+    },
+    startTime: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    endTime: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    }
+});
+
+// Flash Sale Item Model
+const FlashSaleItem = sequelize.define('FlashSaleItem', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    discountPrice: {
+        type: DataTypes.FLOAT,
+        allowNull: false
+    },
+    quantity: {
+        type: DataTypes.INTEGER,
+        defaultValue: 10
+    },
+    sold: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    }
+});
+
 // Associations
 User.hasMany(Order);
 Order.belongsTo(User);
@@ -287,6 +333,13 @@ PushSubscription.belongsTo(User);
 User.hasMany(DiscountCode, { foreignKey: 'assignedUserId', as: 'assignedDiscounts' });
 DiscountCode.belongsTo(User, { foreignKey: 'assignedUserId', as: 'assignedUser' });
 
+// Flash Sale Associations
+FlashSale.hasMany(FlashSaleItem);
+FlashSaleItem.belongsTo(FlashSale);
+
+Product.hasMany(FlashSaleItem);
+FlashSaleItem.belongsTo(Product);
+
 module.exports = {
     sequelize,
     User,
@@ -296,5 +349,7 @@ module.exports = {
     OrderItem,
     Cart,
     ProductDiscount,
-    PushSubscription
+    PushSubscription,
+    FlashSale,
+    FlashSaleItem
 };

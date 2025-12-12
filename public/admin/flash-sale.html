@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Flash Sale - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-logo">
+                <span class="admin-close-btn" onclick="toggleSidebar()"
+                    style="display:none;cursor:pointer;margin-right:10px"><i class="fas fa-times"></i></span>
+                👟 Admin Panel
+            </div>
+            <nav class="admin-nav">
+                <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/admin/flash-sale.html" class="active"><i class="fas fa-bolt"></i> Flash Sale</a>
+                <a href="/admin/users.html"><i class="fas fa-users"></i> Người Dùng</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <div style="display:flex;align-items:center">
+                    <i class="fas fa-bars admin-toggle" onclick="toggleSidebar()" style="display:none"></i>
+                    <h1>Quản Lý Flash Sale</h1>
+                </div>
+            </div>
+
+            <div class="admin-cards" style="grid-template-columns: 1fr;">
+                <div class="admin-card" style="display:block">
+                    <h3>Cấu Hình Flash Sale</h3>
+                    <form id="flash-sale-form" onsubmit="saveFlashSale(event)" style="margin-top:1rem">
+                        <input type="hidden" id="fs-id">
+                        <div class="form-group">
+                            <label>Tên chương trình</label>
+                            <input type="text" id="fs-name" value="Flash Sale" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Thời gian bắt đầu</label>
+                            <input type="datetime-local" id="fs-start" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Thời gian kết thúc</label>
+                            <input type="datetime-local" id="fs-end" required>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" id="fs-active"> Kích hoạt chương trình</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Lưu Cấu Hình</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-table-container" style="margin-top:2rem">
+                <div class="admin-table-header">
+                    <h3>Sản Phẩm Flash Sale</h3>
+                    <button class="btn btn-primary" onclick="showAddProductModal()" style="padding:0.5rem 1rem"><i
+                            class="fas fa-plus"></i> Thêm Sản Phẩm</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Giá gốc</th>
+                            <th>Giá Sale</th>
+                            <th>Số lượng</th>
+                            <th>Đã bán</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fs-items-tbody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal-overlay" id="add-product-modal" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Thêm Sản Phẩm Flash Sale</h2>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="add-item-form" onsubmit="addItem(event)">
+                <div class="form-group">
+                    <label>Chọn sản phẩm</label>
+                    <select id="item-product-id" required onchange="updatePriceHint()"></select>
+                    <small id="price-hint" style="color:var(--gray)"></small>
+                </div>
+                <div class="form-group">
+                    <label>Giá Sale (VNĐ)</label>
+                    <input type="number" id="item-price" required min="1000">
+                </div>
+                <div class="form-group">
+                    <label>Số lượng bán</label>
+                    <input type="number" id="item-quantity" value="10" required min="1">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Thêm Vào Flash Sale</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        let currentFlashSaleId = null;
+        let allProducts = [];
+
+        async function loadFlashSale() {
+            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+
+            try {
+                // Get all flash sales, take the latest one
+                const response = await fetch('/api/flash-sale/admin/all', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const sales = await response.json();
+
+                if (sales.length > 0) {
+                    const latest = sales[0];
+                    currentFlashSaleId = latest.id;
+                    document.getElementById('fs-id').value = latest.id;
+                    document.getElementById('fs-name').value = latest.name;
+                    document.getElementById('fs-start').value = new Date(latest.startTime).toISOString().slice(0, 16);
+                    document.getElementById('fs-end').value = new Date(latest.endTime).toISOString().slice(0, 16);
+                    document.getElementById('fs-active').checked = latest.isActive;
+
+                    renderItems(latest.FlashSaleItems);
+                } else {
+                    // Set defaults for new sale
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    document.getElementById('fs-start').value = now.toISOString().slice(0, 16);
+
+                    const end = new Date(now);
+                    end.setHours(23, 59, 59);
+                    document.getElementById('fs-end').value = end.toISOString().slice(0, 16);
+                }
+
+                // Load products for dropdown
+                const prodRes = await fetch('/api/products');
+                allProducts = await prodRes.json();
+                const select = document.getElementById('item-product-id');
+                select.innerHTML = '<option value="">-- Chọn sản phẩm --</option>' +
+                    allProducts.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${formatPrice(p.price)}</option>`).join('');
+
+            } catch (error) {
+                showToast('Lỗi tải dữ liệu', 'error');
+            }
+        }
+
+        function renderItems(items) {
+            const tbody = document.getElementById('fs-items-tbody');
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Chưa có sản phẩm nào</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => `
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <img src="${item.Product?.image || 'https://via.placeholder.com/50'}" style="width:40px;height:40px;object-fit:cover;border-radius:4px">
+                            ${item.Product?.name}
+                        </div>
+                    </td>
+                    <td>${formatPrice(item.Product?.price)}</td>
+                    <td style="color:var(--danger);font-weight:bold">${formatPrice(item.discountPrice)}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.sold}</td>
+                    <td>
+                        <button class="btn btn-danger" style="padding:0.25rem 0.5rem" onclick="removeItem(${item.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function saveFlashSale(e) {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('fs-name').value,
+                startTime: document.getElementById('fs-start').value,
+                endTime: document.getElementById('fs-end').value,
+                isActive: document.getElementById('fs-active').checked
+            };
+
+            try {
+                let url = '/api/flash-sale/admin';
+                let method = 'POST';
+
+                if (currentFlashSaleId) {
+                    url += `/${currentFlashSaleId}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Lỗi lưu cấu hình');
+
+                const result = await response.json();
+                currentFlashSaleId = result.id;
+                showToast('Đã lưu cấu hình Flash Sale', 'success');
+                loadFlashSale(); // Reload to refresh state
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function showAddProductModal() {
+            if (!currentFlashSaleId) {
+                showToast('Vui lòng lưu cấu hình Flash Sale trước khi thêm sản phẩm', 'warning');
+                return;
+            }
+            document.getElementById('add-product-modal').classList.add('active');
+        }
+
+        function updatePriceHint() {
+            const select = document.getElementById('item-product-id');
+            const option = select.options[select.selectedIndex];
+            const price = option.getAttribute('data-price');
+            if (price) {
+                document.getElementById('price-hint').textContent = `Giá gốc: ${formatPrice(price)}`;
+            } else {
+                document.getElementById('price-hint').textContent = '';
+            }
+        }
+
+        async function addItem(e) {
+            e.preventDefault();
+            const data = {
+                productId: document.getElementById('item-product-id').value,
+                discountPrice: document.getElementById('item-price').value,
+                quantity: document.getElementById('item-quantity').value
+            };
+
+            try {
+                const response = await fetch(`/api/flash-sale/admin/${currentFlashSaleId}/items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Lỗi thêm sản phẩm');
+
+                showToast('Đã thêm sản phẩm', 'success');
+                closeModal();
+                loadFlashSale();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function removeItem(itemId) {
+            if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi Flash Sale?')) return;
+
+            try {
+                const response = await fetch(`/api/flash-sale/admin/items/${itemId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (!response.ok) throw new Error('Lỗi xóa sản phẩm');
+
+                showToast('Đã xóa sản phẩm', 'success');
+                loadFlashSale();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('add-product-modal').classList.remove('active');
+        }
+
+        function toggleSidebar() {
+            document.getElementById('admin-sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadFlashSale);
+    </script>
+</body>
+
+</html>
