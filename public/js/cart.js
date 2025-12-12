@@ -10,11 +10,16 @@ async function initCart() {
 }
 
 async function loadCart(forceReload = false) {
+    // If forcing reload, reset the loaded flag first
+    if (forceReload) {
+        cartLoaded = false;
+    }
+
     // Return existing promise if loading in progress
     if (cartLoadPromise) return cartLoadPromise;
 
-    // Skip if already loaded and not forcing reload
-    if (cartLoaded && !forceReload) return;
+    // Skip if already loaded
+    if (cartLoaded) return;
 
     cartLoadPromise = (async () => {
         if (isLoggedIn()) {
