@@ -235,14 +235,32 @@ const PushClient = {
 
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[Push] Starting initialization...');
+
     const initialized = await PushClient.init();
+    console.log('[Push] Initialized:', initialized);
+
     if (initialized) {
         const isSubscribed = await PushClient.isSubscribed();
+        console.log('[Push] Is subscribed:', isSubscribed);
+        console.log('[Push] Notification permission:', Notification.permission);
+        console.log('[Push] Popup shown before:', localStorage.getItem('push_popup_shown'));
+
         if (!isSubscribed && Notification.permission !== 'denied') {
+            console.log('[Push] Will show popup in 3 seconds...');
             // Show popup after 3 seconds
             setTimeout(() => {
+                console.log('[Push] Showing popup now');
                 PushClient.showPermissionPopup();
             }, 3000);
+        } else {
+            console.log('[Push] Skipping popup - already subscribed or denied');
         }
+    } else {
+        console.log('[Push] Initialization failed - showing popup anyway for testing');
+        // Show popup even if init fails for testing
+        setTimeout(() => {
+            PushClient.showPermissionPopup();
+        }, 3000);
     }
 });
