@@ -52,8 +52,17 @@ app.get('/init-db', async (req, res) => {
     console.log('Init DB requested');
     await sequelize.authenticate();
     console.log('DB Authenticated');
-    await sequelize.sync({ alter: true });
-    console.log('DB Synced');
+
+    // Try alter first, if it fails, just sync without alter
+    try {
+      await sequelize.sync({ alter: true });
+      console.log('DB Synced with alter');
+    } catch (alterError) {
+      console.log('Alter failed, trying normal sync:', alterError.message);
+      await sequelize.sync();
+      console.log('DB Synced without alter');
+    }
+
     res.json({ message: 'Database synced successfully' });
   } catch (error) {
     console.error('Init DB Error:', error);
