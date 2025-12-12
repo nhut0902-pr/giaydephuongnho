@@ -9,10 +9,12 @@ async function initCart() {
     updateCartUI();
 }
 
-async function loadCart() {
-    // Prevent duplicate loading
+async function loadCart(forceReload = false) {
+    // Return existing promise if loading in progress
     if (cartLoadPromise) return cartLoadPromise;
-    if (cartLoaded && cartItems.length > 0) return;
+
+    // Skip if already loaded and not forcing reload
+    if (cartLoaded && !forceReload) return;
 
     cartLoadPromise = (async () => {
         if (isLoggedIn()) {
@@ -25,10 +27,10 @@ async function loadCart() {
             cartItems = getLocalCart();
         }
         cartLoaded = true;
-        cartLoadPromise = null;
     })();
 
     await cartLoadPromise;
+    cartLoadPromise = null;
 }
 
 function getLocalCart() {
@@ -51,8 +53,7 @@ async function addToCart(productId, quantity = 1, product = null) {
     try {
         if (isLoggedIn()) {
             await cartAPI.add(productId, quantity);
-            cartLoaded = false; // Reset cache
-            await loadCart();
+            await loadCart(true); // Force reload
         } else {
             const localCart = getLocalCart();
             const existingIndex = localCart.findIndex(item => item.productId === productId);
@@ -78,8 +79,7 @@ async function updateCartItem(itemId, quantity) {
         if (isLoggedIn()) {
             if (quantity <= 0) await cartAPI.remove(itemId);
             else await cartAPI.update(itemId, quantity);
-            cartLoaded = false; // Reset cache
-            await loadCart();
+            await loadCart(true); // Force reload
         } else {
             let localCart = getLocalCart();
             if (quantity <= 0) localCart = localCart.filter(item => item.id !== itemId);
@@ -100,8 +100,7 @@ async function removeFromCart(itemId) {
     try {
         if (isLoggedIn()) {
             await cartAPI.remove(itemId);
-            cartLoaded = false; // Reset cache
-            await loadCart();
+            await loadCart(true); // Force reload
         } else {
             let localCart = getLocalCart();
             localCart = localCart.filter(item => item.id !== itemId);
