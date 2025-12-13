@@ -25,7 +25,7 @@ const imagekit = new ImageKit({
     urlEndpoint: 'https://ik.imagekit.io/8ayshIqxa'
 });
 
-// Upload image to ImageKit
+// Upload single image to ImageKit
 router.post('/upload', authenticateToken, isAdmin, upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
@@ -47,6 +47,48 @@ router.post('/upload', authenticateToken, isAdmin, upload.single('image'), async
     } catch (error) {
         console.error('Upload error:', error);
         res.status(500).json({ error: 'Failed to upload image' });
+    }
+});
+
+// Upload multiple images to ImageKit
+router.post('/upload-multiple', authenticateToken, isAdmin, upload.array('images', 10), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No image files provided' });
+        }
+
+        const uploadPromises = req.files.map(file => {
+            return imagekit.upload({
+                file: file.buffer.toString('base64'),
+                fileName: `product_${Date.now()}_${file.originalname}`,
+                folder: '/products'
+            });
+        });
+
+        const results = await Promise.all(uploadPromises);
+
+        res.json({
+            success: true,
+            images: results.map(result => ({
+                url: result.url,
+                thumbnailUrl: result.thumbnailUrl,
+                fileId: result.fileId
+            }))
+        });
+    } catch (error) {
+        console.error('Upload multiple error:', error);
+        res.status(500).json({ error: 'Failed to upload images' });
+    }
+});
+
+// Delete image from ImageKit
+router.delete('/delete-image/:fileId', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        await imagekit.deleteFile(req.params.fileId);
+        res.json({ success: true, message: 'Image deleted successfully' });
+    } catch (error) {
+        console.error('Delete image error:', error);
+        res.status(500).json({ error: 'Failed to delete image' });
     }
 });
 

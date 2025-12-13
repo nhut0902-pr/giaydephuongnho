@@ -106,6 +106,22 @@
                 </div>
                 <div class="form-group"><label>Số lượng kho</label><input type="number" id="p-stock" min="0" value="0">
                 </div>
+
+                <!-- Multiple Images Section -->
+                <div class="form-group">
+                    <label>Thư viện ảnh sản phẩm</label>
+                    <div style="margin-bottom:1rem">
+                        <input type="file" id="p-images-files" accept="image/*" multiple style="display:none" onchange="uploadMultipleImages(this)">
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('p-images-files').click()" id="upload-multiple-btn">
+                            <i class="fas fa-images"></i> Tải nhiều ảnh
+                        </button>
+                        <span style="font-size:0.8rem;color:var(--gray);margin-left:1rem">Tối đa 10 ảnh</span>
+                    </div>
+                    <div id="images-gallery" class="images-gallery">
+                        <!-- Multiple images will be displayed here -->
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary btn-block">Lưu</button>
             </form>
         </div>
@@ -124,7 +140,15 @@
                 const products = await productsAPI.getAll();
                 document.getElementById('products-tbody').innerHTML = products.map(p => `
           <tr>
-            <td><img src="${p.image || 'https://via.placeholder.com/50'}" alt="${p.name}"></td>
+            <td>
+              <img src="${p.image || 'https://via.placeholder.com/50'}" alt="${p.name}">
+              ${p.images && p.images.length > 0 ? `
+                <div class="product-images-preview">
+                  ${p.images.slice(0, 3).map(img => `<img src="${img.url}" alt="Gallery">`).join('')}
+                  ${p.images.length > 3 ? `<span style="font-size:0.7rem;color:var(--gray)">+${p.images.length - 3}</span>` : ''}
+                </div>
+              ` : ''}
+            </td>
             <td>${p.name}</td>
             <td>${p.category || '-'}</td>
             <td>${formatPrice(p.price)}</td>
@@ -142,6 +166,8 @@
             document.getElementById('modal-title').textContent = 'Thêm Sản Phẩm';
             document.getElementById('product-form').reset();
             document.getElementById('product-id').value = '';
+            productImages = []; // Reset images
+            renderImagesGallery();
             document.getElementById('product-modal').classList.add('active');
         }
 
@@ -156,6 +182,11 @@
                 document.getElementById('p-image').value = p.image || '';
                 document.getElementById('p-category').value = p.category || '';
                 document.getElementById('p-stock').value = p.stock;
+                
+                // Load existing images
+                productImages = p.images || [];
+                renderImagesGallery();
+                
                 document.getElementById('product-modal').classList.add('active');
             } catch (error) { showToast('Lỗi', 'error'); }
         }
@@ -168,6 +199,7 @@
                 description: document.getElementById('p-desc').value,
                 price: parseFloat(document.getElementById('p-price').value),
                 image: document.getElementById('p-image').value,
+                images: productImages.map(img => ({ url: img.url, fileId: img.fileId })),
                 category: document.getElementById('p-category').value,
                 stock: parseInt(document.getElementById('p-stock').value) || 0
             };
@@ -231,7 +263,80 @@
             if (url) document.getElementById('p-image-preview').src = url;
         }
 
-        function closeModal() { document.getElementById('product-modal').classList.remove('active'); }
+        // Multiple images functionality
+        let productImages = [];
+
+        async function uploadMultipleImages(input) {
+            if (!input.files || input.files.length === 0) return;
+
+            const btn = document.getElementById('upload-multiple-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            Array.from(input.files).forEach(file => {
+                formData.append('images', file);
+            });
+
+            try {
+                const response = await fetch('/api/admin/upload-multiple', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success && data.images) {
+                    productImages = [...productImages, ...data.images];
+                    renderImagesGallery();
+                    showToast(`Đã tải ${data.images.length} ảnh thành công!`, 'success');
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                showToast('Lỗi tải ảnh: ' + error.message, 'error');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-images"></i> Tải nhiều ảnh';
+                btn.disabled = false;
+                input.value = ''; // Reset input
+            }
+        }
+
+        function renderImagesGallery() {
+            const gallery = document.getElementById('images-gallery');
+            gallery.innerHTML = productImages.map((img, index) => `
+                <div class="image-item" style="position:relative;display:inline-block;margin:0.5rem">
+                    <img src="${img.url}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:2px solid #ddd">
+                    <button type="button" onclick="removeImage(${index})" 
+                            style="position:absolute;top:-8px;right:-8px;background:var(--danger);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function removeImage(index) {
+            const image = productImages[index];
+            try {
+                // Delete from ImageKit if it has fileId
+                if (image.fileId) {
+                    await fetch(`/api/admin/delete-image/${image.fileId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                }
+                productImages.splice(index, 1);
+                renderImagesGallery();
+                showToast('Đã xóa ảnh', 'success');
+            } catch (error) {
+                showToast('Lỗi xóa ảnh: ' + error.message, 'error');
+            }
+        }
+
+        function closeModal() { 
+            document.getElementById('product-modal').classList.remove('active');
+            productImages = []; // Reset images when closing modal
+        }
         function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('active'); }
 
         document.addEventListener('DOMContentLoaded', loadProducts);

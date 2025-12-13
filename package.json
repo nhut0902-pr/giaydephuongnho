@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "migrate-images": "node migrate-images.js",
+    "test-images": "node test-multiple-images.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

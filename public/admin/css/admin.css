@@ -331,3 +331,57 @@ table.admin-table {
         opacity: 1;
     }
 }
+
+/* Images Gallery Styles */
+.images-gallery {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 120px;
+    background: #fafafa;
+}
+
+.images-gallery:empty::after {
+    content: "Chưa có ảnh nào. Nhấn 'Tải nhiều ảnh' để thêm.";
+    color: #999;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+}
+
+.image-item {
+    transition: transform 0.2s ease;
+}
+
+.image-item:hover {
+    transform: scale(1.05);
+}
+
+.image-item button {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+
+.image-item button:hover {
+    background: #dc3545 !important;
+    transform: scale(1.1);
+}
+
+/* Product card image gallery preview */
+.product-images-preview {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    overflow-x: auto;
+}
+
+.product-images-preview img {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    flex-shrink: 0;
+}

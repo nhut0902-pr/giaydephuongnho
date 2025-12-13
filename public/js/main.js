@@ -34,11 +34,15 @@ async function loadProducts(category = '') {
       return;
     }
 
-    grid.innerHTML = products.map(p => `
+    grid.innerHTML = products.map(p => {
+      const allImages = [p.image, ...(p.images || []).map(img => img.url)].filter(Boolean);
+      
+      return `
       <div class="product-card">
         <a href="/product-detail.html?id=${p.id}" class="product-image">
-          <img src="${p.image || 'https://via.placeholder.com/400'}" alt="${p.name}">
+          <img src="${allImages[0] || 'https://via.placeholder.com/400'}" alt="${p.name}">
           ${p.discountPercentage ? `<span class="product-badge">-${p.discountPercentage}%</span>` : ''}
+          ${allImages.length > 1 ? `<span class="image-count-badge">${allImages.length} ảnh</span>` : ''}
         </a>
         <div class="product-info">
           <div class="product-category">${p.category || 'Giày dép'}</div>
@@ -56,7 +60,7 @@ async function loadProducts(category = '') {
           </button>
         </div>
       </div>
-    `).join('');
+    `}).join('');
   } catch (error) {
     grid.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Lỗi tải sản phẩm</h3></div>';
   }

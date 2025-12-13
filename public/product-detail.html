@@ -65,8 +65,23 @@
                 currentProduct = product;
                 document.title = `${currentProduct.name} - Giày Dép Hương Nhớ`;
 
+                const allImages = [currentProduct.image, ...(currentProduct.images || []).map(img => img.url)].filter(Boolean);
+                
                 document.getElementById('product-detail').innerHTML = `
-          <div class="product-gallery"><img src="${currentProduct.image || ''}" alt="${currentProduct.name}"></div>
+          <div class="product-gallery">
+            <div class="main-image">
+              <img id="main-product-image" src="${allImages[0] || ''}" alt="${currentProduct.name}">
+            </div>
+            ${allImages.length > 1 ? `
+              <div class="image-thumbnails">
+                ${allImages.map((img, index) => `
+                  <img src="${img}" alt="${currentProduct.name}" 
+                       class="thumbnail ${index === 0 ? 'active' : ''}" 
+                       onclick="changeMainImage('${img}', ${index})">
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
           <div class="product-detail-info">
             <div class="product-category">${currentProduct.category || 'Giày dép'}</div>
             <h1>${currentProduct.name}</h1>
@@ -119,6 +134,15 @@
         function changeQty(delta) {
             quantity = Math.max(1, Math.min(currentProduct.stock, quantity + delta));
             document.getElementById('qty').value = quantity;
+        }
+
+        function changeMainImage(imageSrc, index) {
+            document.getElementById('main-product-image').src = imageSrc;
+            
+            // Update active thumbnail
+            document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
         }
 
         function addProductToCart() {
