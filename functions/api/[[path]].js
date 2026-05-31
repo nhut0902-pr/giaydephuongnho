@@ -1,7 +1,5 @@
-import { createRequire } from 'module';
+import app from '../../server.js';
 
-const require = createRequire(import.meta.url);
-const app = require('../../server');
 const { bootstrapApp } = app;
 
 let bootstrapped = false;
@@ -37,7 +35,7 @@ function handleWithExpress(request, expressApp) {
     }
 
     const body = ['GET', 'HEAD'].includes(request.method) ? null : await request.text();
-    const { Readable } = require('node:stream');
+    const { Readable } = await import('node:stream');
     const readable = new Readable({ read() {} });
     if (body) readable.push(body);
     readable.push(null);
