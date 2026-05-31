@@ -1,6 +1,6 @@
 // Keep the frontend pointed at the currently deployed API worker.
 // This value must match the backend deployment in wrangler.toml.
-const API_URL = window.API_URL || 'https://giaydephuongnho-api.nhutcoder0902.workers.dev/api';
+const API_URL = window.API_URL || 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
 window.API_URL = API_URL;
 
 // API Helper Functions
