@@ -1,4 +1,7 @@
-const API_URL = '/api';
+// Keep the frontend pointed at the currently deployed API worker.
+// This value must match the backend deployment in wrangler.toml.
+const API_URL = window.API_URL || 'https://giaydephuongnho-api.nhutcoder0902.workers.dev/api';
+window.API_URL = API_URL;
 
 // API Helper Functions
 async function api(endpoint, options = {}) {
@@ -12,25 +15,59 @@ async function api(endpoint, options = {}) {
         ...options
     };
 
-    try {
-        const response = await fetch(`${API_URL}${endpoint}`, config);
-        const data = await response.json();
+    const response = await fetch(`${API_URL}${endpoint}`, config);
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Đã xảy ra lỗi');
+    let data = null;
+    let rawText = '';
+
+    if (contentType.includes('application/json')) {
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = null;
+        }
+    } else {
+        rawText = await response.text();
+    }
+
+    if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+            // Token invalid or expired
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            if (window.authAPI && window.updateAuthUI) {
+                window.updateAuthUI();
+            }
+            throw new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
         }
 
-        return data;
-    } catch (error) {
-        throw error;
+        const textError = rawText && !rawText.trim().startsWith('<') ? rawText.trim() : '';
+        throw new Error((data && data.error) || textError || `Yêu cầu thất bại (${response.status})`);
+    }
+
+    if (data !== null) return data;
+
+    // Backend should return JSON for API endpoints. If HTML is returned,
+    // it's usually an old server process or missing route after deploy.
+    if (rawText.trim().startsWith('<')) {
+        throw new Error('API trả về HTML thay vì JSON. Vui lòng khởi động lại server để nạp route mới.');
+    }
+
+    if (!rawText.trim()) return {};
+
+    try {
+        return JSON.parse(rawText);
+    } catch (e) {
+        return { message: rawText };
     }
 }
 
 // Auth API
 const authAPI = {
-    login: (email, password) => api('/auth/login', {
+    login: (email, password, recaptchaToken) => api('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, recaptchaToken })
     }),
 
     register: (data) => api('/auth/register', {
@@ -76,9 +113,9 @@ const productsAPI = {
 const cartAPI = {
     get: () => api('/cart'),
 
-    add: (productId, quantity = 1) => api('/cart', {
+    add: (productId, quantity = 1, size = null, color = null) => api('/cart', {
         method: 'POST',
-        body: JSON.stringify({ productId, quantity })
+        body: JSON.stringify({ productId, quantity, size, color })
     }),
 
     update: (id, quantity) => api(`/cart/${id}`, {
@@ -104,6 +141,18 @@ const ordersAPI = {
     create: (data) => api('/orders', {
         method: 'POST',
         body: JSON.stringify(data)
+    }),
+
+    // Customer return request
+    requestReturn: (id, reason) => api(`/orders/${id}/return`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+    }),
+
+    // Admin approve/reject return
+    adminReturnAction: (id, action, zaloLink) => api(`/orders/admin/${id}/return-action`, {
+        method: 'POST',
+        body: JSON.stringify({ action, zaloLink })
     }),
 
     updateStatus: (id, status) => api(`/orders/${id}`, {
@@ -157,5 +206,45 @@ const adminAPI = {
     getOrders: (params = {}) => {
         const query = new URLSearchParams(params).toString();
         return api(`/admin/orders${query ? '?' + query : ''}`);
-    }
+    },
+
+    getMarketingConfig: () => api('/marketing/admin'),
+
+    saveMarketingConfig: (data) => api('/marketing/admin', {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    })
+};
+
+const reviewsAPI = {
+    getByProduct: (productId) => api(`/reviews/${productId}`),
+    create: (data) => api('/reviews', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    vote: (reviewId, vote) => api(`/reviews/${reviewId}/vote`, {
+        method: 'POST',
+        body: JSON.stringify({ vote })
+    })
+};
+
+const blogAPI = {
+    getAll: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return api(`/blog${query ? '?' + query : ''}`);
+    },
+    getBySlug: (slug) => api(`/blog/${slug}`),
+    getCategories: () => api('/blog/categories'),
+    adminGetAll: () => api('/blog/admin/all'),
+    create: (data) => api('/blog', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    update: (id, data) => api(`/blog/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    }),
+    delete: (id) => api(`/blog/${id}`, {
+        method: 'DELETE'
+    })
 };
