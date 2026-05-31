@@ -3,6 +3,7 @@ const { Order, OrderItem, Cart, Product, DiscountCode, PushSubscription, User } 
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { Op } = require('sequelize');
 const pushRoutes = require('./push');
+const { sendOrderStatusEmail, sendNewOrderEmailToAdmin, sendReturnActionEmail } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -127,7 +128,9 @@ router.post('/', authenticateToken, async (req, res) => {
                 quantity: item.quantity,
                 price: item.Product.price,
                 productName: item.Product.name,
-                productImage: item.Product.image
+                productImage: item.Product.image,
+                size: item.size,
+                color: item.color
             });
 
             // Update stock and sold count
@@ -154,6 +157,12 @@ router.post('/', authenticateToken, async (req, res) => {
                 data: { url: `/admin/orders.html`, orderId: order.id }
             });
         } catch (e) { console.log('Push notification failed:', e); }
+
+        // Send email notification to admin
+        try {
+            const items = completeOrder.OrderItems || [];
+            await sendNewOrderEmailToAdmin(order.id, shippingName, total - discount, items);
+        } catch (e) { console.log('Admin email failed:', e); }
 
         res.status(201).json(completeOrder);
     } catch (error) {
@@ -194,6 +203,14 @@ router.put('/:id', authenticateToken, isAdmin, async (req, res) => {
                 data: { url: `/orders.html`, orderId: order.id }
             });
         } catch (e) { console.log('Push notification failed:', e); }
+
+        // Send email notification to customer
+        try {
+            const user = await User.findByPk(order.UserId);
+            if (user && user.email) {
+                await sendOrderStatusEmail(user.email, user.name, order.id, status, order.total);
+            }
+        } catch (e) { console.log('Order status email failed:', e); }
 
         res.json(updatedOrder);
     } catch (error) {
@@ -236,6 +253,95 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         res.json({ message: 'Đã hủy đơn hàng' });
     } catch (error) {
         console.error('Cancel order error:', error);
+        res.status(500).json({ error: 'Đã xảy ra lỗi' });
+    }
+});
+
+// Customer Request Return
+router.post('/:id/return', authenticateToken, async (req, res) => {
+    try {
+        const order = await Order.findOne({
+            where: { id: req.params.id, UserId: req.user.id }
+        });
+
+        if (!order) return res.status(404).json({ error: 'Đơn hàng không tồn tại' });
+
+        if (order.status !== 'delivered') {
+            return res.status(400).json({ error: 'Chỉ có thể yêu cầu đổi trả cho đơn hàng đã giao thành công' });
+        }
+
+        if (order.returnStatus !== 'none') {
+            return res.status(400).json({ error: 'Đơn hàng này đã được yêu cầu đổi trả' });
+        }
+
+        const deliveredAt = new Date(order.updatedAt);
+        const daysSinceDelivered = (new Date() - deliveredAt) / (1000 * 60 * 60 * 24);
+
+        if (daysSinceDelivered > 7) {
+            return res.status(400).json({ error: 'Đã quá 7 ngày kể từ khi nhận hàng, không thể yêu cầu đổi trả' });
+        }
+
+        const { reason } = req.body;
+        if (!reason) return res.status(400).json({ error: 'Vui lòng cung cấp lý do đổi trả' });
+
+        await order.update({
+            returnStatus: 'requested',
+            returnReason: reason
+        });
+
+        res.json({ message: 'Đã gửi yêu cầu đổi trả thành công', order });
+    } catch (error) {
+        console.error('Request return error:', error);
+        res.status(500).json({ error: 'Đã xảy ra lỗi' });
+    }
+});
+
+// Admin Approve/Reject Return
+router.post('/admin/:id/return-action', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { action, zaloLink } = req.body; // 'approve' or 'reject'
+
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({ error: 'Hành động không hợp lệ' });
+        }
+
+        const order = await Order.findByPk(req.params.id, {
+            include: [{ model: User }]
+        });
+
+        if (!order) return res.status(404).json({ error: 'Đơn hàng không tồn tại' });
+
+        if (order.returnStatus !== 'requested') {
+            return res.status(400).json({ error: 'Đơn hàng này không có yêu cầu đổi trả đang chờ duyệt' });
+        }
+
+        const newReturnStatus = action === 'approve' ? 'approved' : 'rejected';
+        await order.update({ returnStatus: newReturnStatus });
+
+        // Send push notification
+        const isApproved = action === 'approve';
+        const pushTitle = isApproved ? '✅ Yêu cầu đổi trả được chấp nhận' : '❌ Yêu cầu đổi trả bị từ chối';
+        const pushBody = isApproved ? `Yêu cầu đổi trả đơn #${order.id} đã được duyệt. Vui lòng nhắn Zalo shop để được hỗ trợ.` : `Yêu cầu đổi trả đơn #${order.id} không đủ điều kiện.`;
+
+        try {
+            await pushRoutes.sendToUser(order.UserId, {
+                title: pushTitle,
+                body: pushBody,
+                icon: '/images/logo.jpg',
+                data: { url: `/orders.html`, orderId: order.id }
+            });
+        } catch (e) { console.log('Push notification failed:', e); }
+
+        // Send email
+        try {
+            if (order.User && order.User.email) {
+                await sendReturnActionEmail(order.User.email, order.User.name, order.id, newReturnStatus, zaloLink);
+            }
+        } catch (e) { console.log('Return email failed:', e); }
+
+        res.json({ message: 'Đã cập nhật trạng thái đổi trả', order });
+    } catch (error) {
+        console.error('Admin return action error:', error);
         res.status(500).json({ error: 'Đã xảy ra lỗi' });
     }
 });

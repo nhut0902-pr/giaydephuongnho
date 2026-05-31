@@ -151,7 +151,7 @@ router.get('/:orderId', authFromQuery, async (req, res) => {
         // Footer
         doc.fontSize(10).font('Helvetica');
         doc.text('Cam on quy khach da mua hang!', 50, 700, { align: 'center', width: 500 });
-        doc.text('Giay Dep Huong Nho - Hotline: 0123.456.789', 50, 715, { align: 'center', width: 500 });
+        doc.text('Giay Dep Huong Nho - Hotline: 0916813067', 50, 715, { align: 'center', width: 500 });
 
         // Finalize
         doc.end();

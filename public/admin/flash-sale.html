@@ -2,6 +2,9 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Flash Sale - Admin</title>
@@ -26,6 +29,8 @@
                 <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
                 <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
                 <a href="/admin/flash-sale.html" class="active"><i class="fas fa-bolt"></i> Flash Sale</a>
+                <a href="/admin/marketing.html"><i class="fas fa-bullhorn"></i> Marketing Event</a>
+                <a href="/admin/blog.html"><i class="fas fa-newspaper"></i> Blog / Bảng Tin</a>
                 <a href="/admin/users.html"><i class="fas fa-users"></i> Người Dùng</a>
                 <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
                 <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
@@ -116,7 +121,7 @@
 
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="../js/api.js"></script>
+    <script src="../js/api.js?v=4"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/main.js"></script>
     <script>
@@ -124,7 +129,7 @@
         let allProducts = [];
 
         async function loadFlashSale() {
-            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+            if (!(await requireAdmin())) return;
 
             try {
                 // Get all flash sales, take the latest one
@@ -316,6 +321,7 @@
 
         document.addEventListener('DOMContentLoaded', loadFlashSale);
     </script>
+    <script src="/js/push-client.js?v=4"></script>
 </body>
 
 </html>

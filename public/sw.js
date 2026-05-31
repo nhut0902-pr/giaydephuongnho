@@ -1,18 +1,17 @@
-// Service Worker for Push Notifications
-// Giày Dép Hương Nhớ
+// Service Worker for Push Notifications only.
+// Keep fetch handling out to avoid network interception regressions.
 
-const CACHE_NAME = 'giaydephuongnho-v1';
-
-// Install event
-self.addEventListener('install', (event) => {
-    console.log('Service Worker installed');
+self.addEventListener('install', () => {
     self.skipWaiting();
 });
 
-// Activate event
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker activated');
     event.waitUntil(clients.claim());
+});
+
+// Allow immediate activation from the page.
+self.addEventListener('message', (event) => {
+    if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Push event - receive notification
@@ -20,8 +19,8 @@ self.addEventListener('push', (event) => {
     console.log('Push received:', event);
 
     let data = {
-        title: 'Giày Dép Hương Nhớ',
-        body: 'Bạn có thông báo mới!',
+        title: 'Giay Dep Huong Nho',
+        body: 'Ban co thong bao moi!',
         icon: '/images/logo.jpg',
         badge: '/images/badge.png',
         data: { url: '/' }
@@ -44,15 +43,13 @@ self.addEventListener('push', (event) => {
         data: data.data || { url: '/' },
         actions: [
             { action: 'view', title: 'Xem ngay' },
-            { action: 'close', title: 'Đóng' }
+            { action: 'close', title: 'Dong' }
         ],
         requireInteraction: true,
         tag: data.tag || 'notification-' + Date.now()
     };
 
-    event.waitUntil(
-        self.registration.showNotification(data.title, options)
-    );
+    event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
 // Notification click event
@@ -61,30 +58,22 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
     const urlToOpen = event.notification.data?.url || '/';
-
-    if (event.action === 'close') {
-        return;
-    }
+    if (event.action === 'close') return;
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true })
             .then((windowClients) => {
-                // Check if there's already a window open
                 for (const client of windowClients) {
                     if (client.url.includes(self.location.origin) && 'focus' in client) {
                         client.navigate(urlToOpen);
                         return client.focus();
                     }
                 }
-                // If no window is open, open a new one
-                if (clients.openWindow) {
-                    return clients.openWindow(urlToOpen);
-                }
+                if (clients.openWindow) return clients.openWindow(urlToOpen);
             })
     );
 });
 
-// Handle notification close
 self.addEventListener('notificationclose', (event) => {
     console.log('Notification closed:', event);
 });

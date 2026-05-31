@@ -2,11 +2,14 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đơn Hàng - Giày Dép Hương Nhớ</title>
     <link rel="icon" href="/favicon.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -14,7 +17,8 @@
     <header class="header">
         <div class="header-container">
             <a href="/" class="logo"><img src="images/logo.jpg" alt="Giày Dép Hương Nhớ"></a>
-            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a></nav>
+            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a><a href="/blog.html">Bảng
+                    Tin</a></nav>
             <div class="header-actions">
                 <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-bag"></i><span
                         class="cart-count" id="cart-count">0</span></button>
@@ -47,10 +51,11 @@
     <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/api.js?v=4"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/cart.js?v=2"></script>
+    <script src="js/main.js?v=8"></script>
+    <script>document.addEventListener('DOMContentLoaded', initPolicyNotice);</script>
     <script>
         const statusLabels = {
             pending: 'Chờ xác nhận',
@@ -107,6 +112,7 @@
               <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap">
                 ${order.status === 'pending' ? `<button class="btn btn-danger" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Hủy đơn</button>` : ''}
                 <button class="btn btn-secondary" onclick="downloadInvoice(${order.id})"><i class="fas fa-file-pdf"></i> Tải hóa đơn</button>
+                ${getReturnButtonHtml(order)}
               </div>
             </div>
           </div>
@@ -131,7 +137,7 @@
             const token = localStorage.getItem('token');
             // Open in new window with auth header via form submission
             const link = document.createElement('a');
-            link.href = `/api/invoice/${orderId}?token=${token}`;
+            link.href = `${API_URL}/invoice/${orderId}?token=${token}`;
             link.download = `hoadon-${orderId}.pdf`;
             link.target = '_blank';
             document.body.appendChild(link);
@@ -140,8 +146,49 @@
             showToast('Đang tải hóa đơn...', 'success');
         }
 
+        function getReturnButtonHtml(order) {
+            if (order.returnStatus === 'requested') {
+                return '<span style="color:#f59e0b;font-weight:600;display:inline-flex;align-items:center;padding:0.4rem 1rem;border-radius:8px;background:#fef3c7"><i class="fas fa-clock" style="margin-right:0.3rem"></i> Đang chờ duyệt đổi trả</span>';
+            }
+            if (order.returnStatus === 'approved') {
+                return '<span style="color:#10b981;font-weight:600;display:inline-flex;align-items:center;padding:0.4rem 1rem;border-radius:8px;background:#d1fae5"><i class="fas fa-check-circle" style="margin-right:0.3rem"></i> Đổi trả thành công</span>';
+            }
+            if (order.returnStatus === 'rejected') {
+                return '<span style="color:#ef4444;font-weight:600;display:inline-flex;align-items:center;padding:0.4rem 1rem;border-radius:8px;background:#fee2e2"><i class="fas fa-times-circle" style="margin-right:0.3rem"></i> Đổi trả bị từ chối</span>';
+            }
+
+            if (order.status === 'delivered') {
+                const deliveredAt = new Date(order.updatedAt);
+                const daysDiff = (new Date() - deliveredAt) / (1000 * 60 * 60 * 24);
+                if (daysDiff <= 7) {
+                    return `<button class="btn btn-primary" onclick="requestReturn(${order.id})" style="background:#f59e0b;color:white;border:none"><i class="fas fa-exchange-alt"></i> Yêu cầu đổi trả</button>`;
+                } else {
+                    return '<span style="color:#888;font-size:0.9rem;display:inline-flex;align-items:center;padding:0.5rem"><i class="fas fa-info-circle" style="margin-right:0.3rem"></i> Quá hạn đổi trả (7 ngày)</span>';
+                }
+            }
+            return '';
+        }
+
+        async function requestReturn(id) {
+            const reason = prompt('Vui lòng nhập lý do yêu cầu đổi trả hàng:');
+            if (reason === null) return; // User cancelled
+            if (!reason.trim()) {
+                showToast('Vui lòng nhập lý do đổi trả', 'error');
+                return;
+            }
+
+            try {
+                await ordersAPI.requestReturn(id, reason.trim());
+                showToast('Đã gửi yêu cầu đổi trả thành công', 'success');
+                loadOrders(); // Reload to update button state
+            } catch (error) {
+                showToast(error.message || 'Lỗi gửi yêu cầu đổi trả', 'error');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', loadOrders);
     </script>
+    <script src="/js/push-client.js?v=4"></script>
 </body>
 
 </html>

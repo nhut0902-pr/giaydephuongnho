@@ -3,6 +3,7 @@ const { DiscountCode, Product, ProductDiscount, User } = require('../models');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { Op } = require('sequelize');
 const pushRoutes = require('./push');
+const { sendNewDiscountEmail } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -115,6 +116,11 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
                     await pushRoutes.sendToAllCustomers(payload);
                 }
             } catch (e) { console.log('Push notification failed:', e); }
+
+            // Send email to all customers
+            try {
+                await sendNewDiscountEmail(code.toUpperCase(), percentage, validTo);
+            } catch (e) { console.log('Discount email failed:', e); }
         }
 
         const createdDiscount = await DiscountCode.findByPk(discount.id, {
@@ -140,7 +146,7 @@ router.put('/:id', authenticateToken, isAdmin, async (req, res) => {
             return res.status(404).json({ error: 'Mã giảm giá không tồn tại' });
         }
 
-        const { code, percentage, validFrom, validTo, minOrderValue, maxDiscount, usageLimit, active, productIds } = req.body;
+        const { code, percentage, validFrom, validTo, minOrderValue, maxDiscount, usageLimit, active, productIds, type, assignedUserId, displayOnHomepage, notifyUsers } = req.body;
 
         await discount.update({
             code: code ? code.toUpperCase() : discount.code,
@@ -150,7 +156,11 @@ router.put('/:id', authenticateToken, isAdmin, async (req, res) => {
             minOrderValue: minOrderValue !== undefined ? minOrderValue : discount.minOrderValue,
             maxDiscount: maxDiscount !== undefined ? maxDiscount : discount.maxDiscount,
             usageLimit: usageLimit !== undefined ? usageLimit : discount.usageLimit,
-            active: active !== undefined ? active : discount.active
+            active: active !== undefined ? active : discount.active,
+            type: type !== undefined ? type : discount.type,
+            assignedUserId: type === 'public' ? null : (assignedUserId !== undefined ? assignedUserId : discount.assignedUserId),
+            displayOnHomepage: displayOnHomepage !== undefined ? displayOnHomepage : discount.displayOnHomepage,
+            notifyUsers: notifyUsers !== undefined ? notifyUsers : discount.notifyUsers
         });
 
         // Update product associations if specified

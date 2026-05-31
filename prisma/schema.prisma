@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                Int                @id @default(autoincrement())
+  name              String
+  email             String             @unique
+  password          String
+  phone             String?
+  address           String?
+  googleId          String?
+  role              String             @default("customer")
+  emailVerified     Boolean            @default(false)
+  otpCode           String?
+  otpExpiry         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  assignedDiscounts DiscountCode[]     @relation("AssignedUserDiscounts")
+  BlogPosts         BlogPost[]
+  Carts             Cart[]
+  Orders            Order[]
+  PushSubscriptions PushSubscription[]
+  Reviews           Review[]
+  ReviewVotes       ReviewVote[]
+
+  @@map("GDNUsers")
+}
+
+model Product {
+  id               Int               @id @default(autoincrement())
+  name             String
+  description      String?
+  price            Float
+  image            String?
+  images           Json?
+  category         String?
+  stock            Int               @default(0)
+  sold             Int               @default(0)
+  sizes            Json?
+  colors           Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  Carts            Cart[]
+  FlashSaleItems   FlashSaleItem[]
+  OrderItems       OrderItem[]
+  ProductDiscounts ProductDiscount[]
+  Reviews          Review[]
+
+  @@map("GDNProducts")
+}
+
+model DiscountCode {
+  id                Int               @id @default(autoincrement())
+  code              String            @unique
+  percentage        Float
+  validFrom         DateTime?         @default(now())
+  validTo           DateTime?
+  active            Boolean           @default(true)
+  minOrderValue     Float             @default(0)
+  maxDiscount       Float?
+  usageLimit        Int?
+  usedCount         Int               @default(0)
+  type              String            @default("public")
+  assignedUserId    Int?
+  displayOnHomepage Boolean           @default(false)
+  notifyUsers       Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  assignedUser      User?             @relation("AssignedUserDiscounts", fields: [assignedUserId], references: [id])
+  ProductDiscounts  ProductDiscount[]
+
+  @@map("GDNDiscountCodes")
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  status          String      @default("pending")
+  total           Float
+  discount        Float       @default(0)
+  shippingAddress String?
+  shippingName    String?
+  shippingPhone   String?
+  notes           String?
+  discountCode    String?
+  isRead          Boolean     @default(false)
+  returnStatus    String      @default("none")
+  returnReason    String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  UserId          Int?
+  OrderItems      OrderItem[]
+  User            User?       @relation(fields: [UserId], references: [id])
+
+  @@map("GDNOrders")
+}
+
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  quantity     Int
+  price        Float
+  productName  String?
+  productImage String?
+  size         String?
+  color        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  OrderId      Int
+  ProductId    Int
+  Order        Order    @relation(fields: [OrderId], references: [id])
+  Product      Product  @relation(fields: [ProductId], references: [id])
+
+  @@map("GDNOrderItems")
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  quantity  Int      @default(1)
+  size      String?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  UserId    Int
+  ProductId Int
+  Product   Product  @relation(fields: [ProductId], references: [id])
+  User      User     @relation(fields: [UserId], references: [id])
+
+  @@map("GDNCarts")
+}
+
+model ProductDiscount {
+  id             Int          @id @default(autoincrement())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  ProductId      Int
+  DiscountCodeId Int
+  DiscountCode   DiscountCode @relation(fields: [DiscountCodeId], references: [id], onDelete: Cascade)
+  Product        Product      @relation(fields: [ProductId], references: [id], onDelete: Cascade)
+
+  @@unique([ProductId, DiscountCodeId])
+  @@map("GDNProductDiscounts")
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  role      String   @default("customer")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User?    @relation(fields: [userId], references: [id])
+
+  @@map("GDNPushSubscriptions")
+}
+
+model FlashSale {
+  id             Int             @id @default(autoincrement())
+  name           String          @default("Flash Sale")
+  startTime      DateTime
+  endTime        DateTime
+  isActive       Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  FlashSaleItems FlashSaleItem[]
+
+  @@map("GDNFlashSales")
+}
+
+model FlashSaleItem {
+  id            Int       @id @default(autoincrement())
+  discountPrice Float
+  quantity      Int       @default(10)
+  sold          Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  FlashSaleId   Int
+  ProductId     Int
+  FlashSale     FlashSale @relation(fields: [FlashSaleId], references: [id])
+  Product       Product   @relation(fields: [ProductId], references: [id])
+
+  @@map("GDNFlashSaleItems")
+}
+
+model MarketingConfig {
+  id                    Int      @id @default(autoincrement())
+  key                   String   @unique @default("homepage")
+  campaignsEnabled      Boolean  @default(true)
+  campaigns             Json?
+  luckySpinEnabled      Boolean  @default(true)
+  luckySpinPopupEnabled Boolean  @default(true)
+  luckySpinPopupDelay   Int      @default(2200)
+  luckySpinTitle        String   @default("Vong Quay May Man 2026")
+  luckySpinDescription  String   @default("Moi khach hang duoc quay 1 lan moi ngay de nhan voucher.")
+  luckySpinRewards      Json?
+  popupAdsEnabled       Boolean  @default(false)
+  popupAdsDelay         Int      @default(1800)
+  popupAds              Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("GDNMarketingConfigs")
+}
+
+model Review {
+  id          Int          @id @default(autoincrement())
+  rating      Int
+  comment     String?
+  likes       Int          @default(0)
+  dislikes    Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  UserId      Int
+  ProductId   Int
+  Product     Product      @relation(fields: [ProductId], references: [id])
+  User        User         @relation(fields: [UserId], references: [id])
+  ReviewVotes ReviewVote[]
+
+  @@map("GDNReviews")
+}
+
+model ReviewVote {
+  id        Int      @id @default(autoincrement())
+  vote      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  UserId    Int
+  ReviewId  Int
+  Review    Review   @relation(fields: [ReviewId], references: [id])
+  User      User     @relation(fields: [UserId], references: [id])
+
+  @@unique([UserId, ReviewId])
+  @@map("GDNReviewVotes")
+}
+
+model BlogPost {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  content   String
+  excerpt   String?
+  thumbnail String?
+  category  String   @default("Tin tức")
+  published Boolean  @default(false)
+  views     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  UserId    Int
+  User      User     @relation(fields: [UserId], references: [id])
+
+  @@map("GDNBlogPosts")
+}

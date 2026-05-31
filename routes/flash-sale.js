@@ -3,6 +3,8 @@ const router = express.Router();
 const { FlashSale, FlashSaleItem, Product } = require('../models');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const pushRoutes = require('./push');
+const { sendFlashSaleEmail } = require('../utils/mailer');
 
 // GET /api/flash-sale/current (Public)
 router.get('/current', async (req, res) => {
@@ -73,6 +75,21 @@ router.post('/admin', authenticateToken, isAdmin, async (req, res) => {
         });
 
         res.json(flashSale);
+
+        // Send notifications if sale is active
+        if (isActive) {
+            try {
+                await pushRoutes.sendToAllCustomers({
+                    title: '⚡ Flash Sale!',
+                    body: `${name || 'Flash Sale'} đang diễn ra!`,
+                    icon: '/images/logo.jpg',
+                    data: { url: '/' }
+                });
+            } catch (e) { console.log('Flash sale push failed:', e); }
+            try {
+                await sendFlashSaleEmail(name, endTime);
+            } catch (e) { console.log('Flash sale email failed:', e); }
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

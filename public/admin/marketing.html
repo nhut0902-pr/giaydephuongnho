@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Event - Admin</title>
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg">
+    <link rel="stylesheet" href="../css/style.css?v=6">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .item-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            background: #fff;
+        }
+
+        .item-card h4 {
+            margin-bottom: 0.75rem;
+        }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .hint {
+            color: var(--gray);
+            font-size: 0.85rem;
+            margin-top: -8px;
+            margin-bottom: 8px;
+        }
+
+        .upload-inline input[type="file"] {
+            display: none;
+        }
+
+        .upload-inline {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .upload-btn {
+            padding: 0.45rem 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .image-preview {
+            display: none;
+            margin-top: 0.65rem;
+            width: min(260px, 100%);
+            max-height: 140px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            background: #f8fafc;
+        }
+
+        .image-preview.is-visible {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+
+            .row-2,
+            .row-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-logo">
+                <span class="admin-close-btn" onclick="toggleSidebar()"
+                    style="display:none;cursor:pointer;margin-right:10px"><i class="fas fa-times"></i></span>
+                👟 Admin Panel
+            </div>
+            <nav class="admin-nav">
+                <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/admin/flash-sale.html"><i class="fas fa-bolt"></i> Flash Sale</a>
+                <a href="/admin/marketing.html" class="active"><i class="fas fa-bullhorn"></i> Marketing Event</a>
+                <a href="/admin/blog.html"><i class="fas fa-newspaper"></i> Blog / Bảng Tin</a>
+                <a href="/admin/users.html"><i class="fas fa-users"></i> Người Dùng</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <div style="display:flex;align-items:center">
+                    <i class="fas fa-bars admin-toggle" onclick="toggleSidebar()" style="display:none"></i>
+                    <h1>Marketing Event</h1>
+                </div>
+                <button class="btn btn-primary" onclick="saveAllConfig()"><i class="fas fa-save"></i> Lưu cấu
+                    hình</button>
+            </div>
+
+            <div class="admin-card" style="display:block">
+                <h3>Cài đặt tổng quan</h3>
+                <div class="config-grid" style="margin-top:1rem">
+                    <label class="form-group"><input type="checkbox" id="campaignsEnabled"> Bật banner sự kiện</label>
+                    <label class="form-group"><input type="checkbox" id="luckySpinEnabled"> Bật vòng quay may
+                        mắn</label>
+                    <label class="form-group"><input type="checkbox" id="luckySpinPopupEnabled"> Tự mở popup vòng
+                        quay</label>
+                    <label class="form-group"><input type="checkbox" id="popupAdsEnabled"> Bật popup banner quảng
+                        cáo</label>
+                </div>
+                <div class="row-3">
+                    <div class="form-group">
+                        <label>Tiêu đề vòng quay</label>
+                        <input id="luckySpinTitle" type="text">
+                    </div>
+                    <div class="form-group">
+                        <label>Delay popup vòng quay (ms)</label>
+                        <input id="luckySpinPopupDelay" type="number" min="0" max="15000" step="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Delay popup banner quảng cáo (ms)</label>
+                        <input id="popupAdsDelay" type="number" min="0" max="15000" step="100">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mô tả vòng quay</label>
+                    <textarea id="luckySpinDescription" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="admin-card" style="display:block; margin-top:1rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+                    <h3>Banner sự kiện (Campaign)</h3>
+                    <button class="btn btn-secondary" onclick="addCampaign()"><i class="fas fa-plus"></i> Thêm
+                        campaign</button>
+                </div>
+                <div class="item-list" id="campaign-list"></div>
+            </div>
+
+            <div class="admin-card" style="display:block; margin-top:1rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+                    <h3>Phần thưởng vòng quay</h3>
+                    <button class="btn btn-secondary" onclick="addReward()"><i class="fas fa-plus"></i> Thêm phần
+                        thưởng</button>
+                </div>
+                <div class="hint">Nếu để trống mã, kết quả chỉ hiển thị thông báo không có voucher.</div>
+                <div class="item-list" id="reward-list"></div>
+            </div>
+
+            <div class="admin-card" style="display:block; margin-top:1rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+                    <h3>Popup banner quảng cáo</h3>
+                    <button class="btn btn-secondary" onclick="addPopupAd()"><i class="fas fa-plus"></i> Thêm
+                        popup</button>
+                </div>
+                <div class="item-list" id="popup-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js?v=4"></script>
+    <script src="../js/auth.js?v=2"></script>
+    <script src="../js/main.js?v=8"></script>
+    <script>
+        let state = {
+            campaigns: [],
+            rewards: [],
+            popupAds: [],
+            products: []
+        };
+
+        function uid(prefix) {
+            return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        }
+
+        function normalizeProductId(value) {
+            const parsed = Number.parseInt(value, 10);
+            if (Number.isNaN(parsed) || parsed <= 0) return null;
+            return parsed;
+        }
+
+        function extractProductIdFromHref(href) {
+            if (typeof href !== 'string') return null;
+            if (!href.includes('product-detail')) return null;
+            const match = href.match(/[?&]id=(\d+)/);
+            return match ? normalizeProductId(match[1]) : null;
+        }
+
+        function resolveProductHref(productId, fallback = '/products.html') {
+            const parsedProductId = normalizeProductId(productId);
+            return parsedProductId ? `/product-detail.html?id=${parsedProductId}` : (fallback || '/products.html');
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function parseBenefits(value) {
+            return value.split('\n')
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map(line => {
+                    const parts = line.split('|');
+                    if (parts.length < 2) return null;
+                    return { label: parts[0].trim(), value: parts[1].trim() };
+                })
+                .filter(Boolean);
+        }
+
+        function benefitsToText(benefits = []) {
+            return benefits.map(item => `${item.label}|${item.value}`).join('\n');
+        }
+
+        function renderProductOptions(selectedProductId) {
+            const parsedSelected = normalizeProductId(selectedProductId);
+            const defaultOption = '<option value="">-- Dùng link thủ công --</option>';
+            if (!Array.isArray(state.products) || state.products.length === 0) {
+                return `${defaultOption}<option value="" disabled>Chưa có sản phẩm</option>`;
+            }
+
+            const productOptions = state.products.map(product => {
+                const productId = normalizeProductId(product.id);
+                if (!productId) return '';
+                const selected = parsedSelected === productId ? 'selected' : '';
+                return `<option value="${productId}" ${selected}>#${productId} - ${escapeHtml(product.name || 'Sản phẩm')}</option>`;
+            }).join('');
+
+            return `${defaultOption}${productOptions}`;
+        }
+
+        function setPreviewImage(previewId, imageUrl) {
+            const previewEl = document.getElementById(previewId);
+            if (!previewEl) return;
+            const cleanUrl = String(imageUrl || '').trim();
+            if (!cleanUrl) {
+                previewEl.removeAttribute('src');
+                previewEl.classList.remove('is-visible');
+                return;
+            }
+            previewEl.src = cleanUrl;
+            previewEl.classList.add('is-visible');
+        }
+
+        function updateCampaignBackgroundPreview(index, imageUrl) {
+            setPreviewImage(`campaign-bg-preview-${index}`, imageUrl);
+        }
+
+        function updatePopupImagePreview(index, imageUrl) {
+            setPreviewImage(`popup-image-preview-${index}`, imageUrl);
+        }
+
+        function renderCampaigns() {
+            const root = document.getElementById('campaign-list');
+            root.innerHTML = state.campaigns.map((item, index) => {
+                const productId = normalizeProductId(item.productId) || extractProductIdFromHref(item.ctaHref);
+                const ctaHref = item.ctaHref || resolveProductHref(productId, '/products.html');
+                const backgroundImage = item.backgroundImage || '';
+                const campaignId = item.id || uid('campaign');
+                return `
+                <div class="item-card campaign-item" data-index="${index}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+                        <h4>Campaign #${index + 1}</h4>
+                        <button class="btn btn-danger" style="padding:0.35rem 0.7rem" onclick="removeCampaign(${index})"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="row-3">
+                        <div class="form-group">
+                            <label>ID</label>
+                            <input class="campaign-id" value="${escapeHtml(campaignId)}">
+                        </div>
+                        <div class="form-group">
+                            <label>Theme</label>
+                            <select class="campaign-theme">
+                                <option value="love" ${item.theme === 'love' ? 'selected' : ''}>Love</option>
+                                <option value="lunar" ${item.theme === 'lunar' ? 'selected' : ''}>Lunar</option>
+                            </select>
+                        </div>
+                        <label class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                            <input type="checkbox" class="campaign-active" ${item.active !== false ? 'checked' : ''}> Đang bật
+                        </label>
+                    </div>
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>Tag</label>
+                            <input class="campaign-tag" value="${escapeHtml(item.tag || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label>Tiêu đề</label>
+                            <input class="campaign-title" value="${escapeHtml(item.title || '')}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Mô tả</label>
+                        <textarea class="campaign-subtitle" rows="2">${escapeHtml(item.subtitle || '')}</textarea>
+                    </div>
+                    <div class="row-3">
+                        <div class="form-group">
+                            <label>Nút CTA text</label>
+                            <input class="campaign-cta-text" value="${escapeHtml(item.ctaText || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label>Nút CTA link</label>
+                            <input class="campaign-cta-href" value="${escapeHtml(ctaHref)}">
+                        </div>
+                        <div class="form-group">
+                            <label>Gắn sản phẩm cho CTA</label>
+                            <select class="campaign-product-id" onchange="onCampaignProductChange(${index}, this)">
+                                ${renderProductOptions(productId)}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="hint">Nếu chọn sản phẩm, link CTA sẽ tự về trang chi tiết sản phẩm.</div>
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>Ảnh trái (URL)</label>
+                            <input class="campaign-image-left" value="${escapeHtml(item.imageLeft || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label>Ảnh phải (URL)</label>
+                            <input class="campaign-image-right" value="${escapeHtml(item.imageRight || '')}">
+                        </div>
+                    </div>
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>Ảnh nền banner (URL)</label>
+                            <input class="campaign-background-image" value="${escapeHtml(backgroundImage)}"
+                                oninput="updateCampaignBackgroundPreview(${index}, this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Tải ảnh nền</label>
+                            <div class="upload-inline">
+                                <input type="file" id="campaign-bg-file-${index}" accept="image/*"
+                                    onchange="uploadCampaignBackground(${index}, this)">
+                                <button class="btn btn-secondary upload-btn" type="button" id="campaign-bg-btn-${index}"
+                                    onclick="document.getElementById('campaign-bg-file-${index}').click()">
+                                    <i class="fas fa-upload"></i> Tải ảnh nền
+                                </button>
+                            </div>
+                            <img id="campaign-bg-preview-${index}" class="image-preview ${backgroundImage ? 'is-visible' : ''}"
+                                src="${escapeHtml(backgroundImage)}" alt="Preview ảnh nền campaign">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Benefits (mỗi dòng dạng: label|value)</label>
+                        <textarea class="campaign-benefits" rows="3">${escapeHtml(benefitsToText(item.benefits || []))}</textarea>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function renderRewards() {
+            const root = document.getElementById('reward-list');
+            root.innerHTML = state.rewards.map((item, index) => `
+                <div class="item-card reward-item" data-index="${index}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+                        <h4>Phần thưởng #${index + 1}</h4>
+                        <button class="btn btn-danger" style="padding:0.35rem 0.7rem" onclick="removeReward(${index})"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="row-3">
+                        <div class="form-group">
+                            <label>Nhãn trên vòng quay</label>
+                            <input class="reward-label" value="${escapeHtml(item.label || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label>Nội dung hiển thị</label>
+                            <input class="reward-text" value="${escapeHtml(item.text || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label>Mã voucher (có thể trống)</label>
+                            <input class="reward-code" value="${escapeHtml(item.code || '')}">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPopupAds() {
+            const root = document.getElementById('popup-list');
+            root.innerHTML = state.popupAds.map((item, index) => {
+                const productId = normalizeProductId(item.productId) || extractProductIdFromHref(item.ctaHref);
+                const ctaHref = item.ctaHref || resolveProductHref(productId, '/products.html');
+                const popupId = item.id || uid('popup');
+                const imageUrl = item.imageUrl || '';
+                return `
+                <div class="item-card popup-item" data-index="${index}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+                        <h4>Popup #${index + 1}</h4>
+                        <button class="btn btn-danger" style="padding:0.35rem 0.7rem" onclick="removePopupAd(${index})"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="row-3">
+                        <div class="form-group">
+                            <label>ID</label>
+                            <input class="popup-id" value="${escapeHtml(popupId)}">
+                        </div>
+                        <div class="form-group">
+                            <label>Tiêu đề</label>
+                            <input class="popup-title" value="${escapeHtml(item.title || '')}">
+                        </div>
+                        <label class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                            <input type="checkbox" class="popup-active" ${item.active !== false ? 'checked' : ''}> Đang bật
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Mô tả ngắn</label>
+                        <textarea class="popup-subtitle" rows="2">${escapeHtml(item.subtitle || '')}</textarea>
+                    </div>
+                    <div class="row-3">
+                        <div class="form-group">
+                            <label>Ảnh banner (URL)</label>
+                            <input class="popup-image" value="${escapeHtml(imageUrl)}"
+                                oninput="updatePopupImagePreview(${index}, this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Nút CTA text</label>
+                            <input class="popup-cta-text" value="${escapeHtml(item.ctaText || 'Xem ngay')}">
+                        </div>
+                        <div class="form-group">
+                            <label>Nút CTA link</label>
+                            <input class="popup-cta-href" value="${escapeHtml(ctaHref)}">
+                        </div>
+                    </div>
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>Gắn sản phẩm cho CTA</label>
+                            <select class="popup-product-id" onchange="onPopupProductChange(${index}, this)">
+                                ${renderProductOptions(productId)}
+                            </select>
+                            <div class="hint">Nếu chọn sản phẩm, link CTA tự động chuyển về trang chi tiết.</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tải ảnh popup</label>
+                            <div class="upload-inline">
+                                <input type="file" id="popup-image-file-${index}" accept="image/*"
+                                    onchange="uploadPopupImage(${index}, this)">
+                                <button class="btn btn-secondary upload-btn" type="button" id="popup-image-btn-${index}"
+                                    onclick="document.getElementById('popup-image-file-${index}').click()">
+                                    <i class="fas fa-upload"></i> Tải ảnh popup
+                                </button>
+                            </div>
+                            <img id="popup-image-preview-${index}" class="image-preview ${imageUrl ? 'is-visible' : ''}"
+                                src="${escapeHtml(imageUrl)}" alt="Preview ảnh popup">
+                        </div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function addCampaign() {
+            state.campaigns.push({
+                id: uid('campaign'),
+                active: true,
+                theme: 'love',
+                tag: '',
+                title: '',
+                subtitle: '',
+                ctaText: 'Mua ngay',
+                ctaHref: '/products.html',
+                productId: null,
+                backgroundImage: '',
+                imageLeft: '',
+                imageRight: '',
+                benefits: []
+            });
+            renderCampaigns();
+        }
+
+        function removeCampaign(index) {
+            state.campaigns.splice(index, 1);
+            renderCampaigns();
+        }
+
+        function addReward() {
+            state.rewards.push({ label: '', text: '', code: '' });
+            renderRewards();
+        }
+
+        function removeReward(index) {
+            state.rewards.splice(index, 1);
+            renderRewards();
+        }
+
+        function addPopupAd() {
+            state.popupAds.push({
+                id: uid('popup'),
+                active: true,
+                title: '',
+                subtitle: '',
+                imageUrl: '',
+                ctaText: 'Xem ngay',
+                ctaHref: '/products.html',
+                productId: null
+            });
+            renderPopupAds();
+        }
+
+        function removePopupAd(index) {
+            state.popupAds.splice(index, 1);
+            renderPopupAds();
+        }
+
+        async function uploadImageFile(file, buttonEl, loadingText = 'Đang tải...') {
+            if (!file) throw new Error('Không có file ảnh');
+            const token = localStorage.getItem('token');
+            if (!token) throw new Error('Vui lòng đăng nhập lại');
+
+            const previousHtml = buttonEl ? buttonEl.innerHTML : '';
+            if (buttonEl) {
+                buttonEl.disabled = true;
+                buttonEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${loadingText}`;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.url) {
+                    throw new Error(data.error || 'Tải ảnh thất bại');
+                }
+                return data.url;
+            } finally {
+                if (buttonEl) {
+                    buttonEl.disabled = false;
+                    buttonEl.innerHTML = previousHtml;
+                }
+            }
+        }
+
+        async function uploadCampaignBackground(index, input) {
+            if (!input.files || !input.files[0]) return;
+            const card = document.querySelector(`.campaign-item[data-index="${index}"]`);
+            if (!card) return;
+
+            const btn = document.getElementById(`campaign-bg-btn-${index}`);
+            const urlInput = card.querySelector('.campaign-background-image');
+
+            try {
+                const url = await uploadImageFile(input.files[0], btn, 'Đang tải nền...');
+                if (urlInput) urlInput.value = url;
+                updateCampaignBackgroundPreview(index, url);
+                showToast('Đã tải ảnh nền campaign', 'success');
+            } catch (error) {
+                showToast(error.message || 'Lỗi tải ảnh nền', 'error');
+            } finally {
+                input.value = '';
+            }
+        }
+
+        async function uploadPopupImage(index, input) {
+            if (!input.files || !input.files[0]) return;
+            const card = document.querySelector(`.popup-item[data-index="${index}"]`);
+            if (!card) return;
+
+            const btn = document.getElementById(`popup-image-btn-${index}`);
+            const urlInput = card.querySelector('.popup-image');
+
+            try {
+                const url = await uploadImageFile(input.files[0], btn, 'Đang tải popup...');
+                if (urlInput) urlInput.value = url;
+                updatePopupImagePreview(index, url);
+                showToast('Đã tải ảnh popup', 'success');
+            } catch (error) {
+                showToast(error.message || 'Lỗi tải ảnh popup', 'error');
+            } finally {
+                input.value = '';
+            }
+        }
+
+        function onCampaignProductChange(index, selectEl) {
+            const card = document.querySelector(`.campaign-item[data-index="${index}"]`);
+            if (!card) return;
+            const ctaHrefInput = card.querySelector('.campaign-cta-href');
+            if (!ctaHrefInput) return;
+            const productId = normalizeProductId(selectEl.value);
+            if (productId) {
+                ctaHrefInput.value = resolveProductHref(productId);
+            }
+        }
+
+        function onPopupProductChange(index, selectEl) {
+            const card = document.querySelector(`.popup-item[data-index="${index}"]`);
+            if (!card) return;
+            const ctaHrefInput = card.querySelector('.popup-cta-href');
+            if (!ctaHrefInput) return;
+            const productId = normalizeProductId(selectEl.value);
+            if (productId) {
+                ctaHrefInput.value = resolveProductHref(productId);
+            }
+        }
+
+        function collectCampaigns() {
+            return Array.from(document.querySelectorAll('.campaign-item')).map(node => {
+                const productId = normalizeProductId(node.querySelector('.campaign-product-id').value);
+                const rawHref = node.querySelector('.campaign-cta-href').value.trim();
+                return {
+                    id: node.querySelector('.campaign-id').value.trim(),
+                    active: node.querySelector('.campaign-active').checked,
+                    theme: node.querySelector('.campaign-theme').value,
+                    tag: node.querySelector('.campaign-tag').value.trim(),
+                    title: node.querySelector('.campaign-title').value.trim(),
+                    subtitle: node.querySelector('.campaign-subtitle').value.trim(),
+                    ctaText: node.querySelector('.campaign-cta-text').value.trim(),
+                    ctaHref: resolveProductHref(productId, rawHref || '/products.html'),
+                    productId,
+                    backgroundImage: node.querySelector('.campaign-background-image').value.trim(),
+                    imageLeft: node.querySelector('.campaign-image-left').value.trim(),
+                    imageRight: node.querySelector('.campaign-image-right').value.trim(),
+                    benefits: parseBenefits(node.querySelector('.campaign-benefits').value)
+                };
+            });
+        }
+
+        function collectRewards() {
+            return Array.from(document.querySelectorAll('.reward-item')).map(node => ({
+                label: node.querySelector('.reward-label').value.trim(),
+                text: node.querySelector('.reward-text').value.trim(),
+                code: node.querySelector('.reward-code').value.trim() || null
+            }));
+        }
+
+        function collectPopupAds() {
+            return Array.from(document.querySelectorAll('.popup-item')).map(node => {
+                const productId = normalizeProductId(node.querySelector('.popup-product-id').value);
+                const rawHref = node.querySelector('.popup-cta-href').value.trim();
+                return {
+                    id: node.querySelector('.popup-id').value.trim(),
+                    active: node.querySelector('.popup-active').checked,
+                    title: node.querySelector('.popup-title').value.trim(),
+                    subtitle: node.querySelector('.popup-subtitle').value.trim(),
+                    imageUrl: node.querySelector('.popup-image').value.trim(),
+                    ctaText: node.querySelector('.popup-cta-text').value.trim(),
+                    ctaHref: resolveProductHref(productId, rawHref || '/products.html'),
+                    productId
+                };
+            });
+        }
+
+        async function loadProductsForMarketing() {
+            try {
+                const products = await productsAPI.getAll();
+                state.products = Array.isArray(products) ? products : [];
+            } catch (error) {
+                state.products = [];
+                showToast('Không tải được danh sách sản phẩm, bạn vẫn có thể nhập link thủ công.', 'warning');
+            }
+        }
+
+        async function loadConfig() {
+            if (!(await requireAdmin())) return;
+
+            try {
+                const [config] = await Promise.all([
+                    adminAPI.getMarketingConfig(),
+                    loadProductsForMarketing()
+                ]);
+                document.getElementById('campaignsEnabled').checked = !!config.campaignsEnabled;
+                document.getElementById('luckySpinEnabled').checked = !!config.luckySpinEnabled;
+                document.getElementById('luckySpinPopupEnabled').checked = !!config.luckySpinPopupEnabled;
+                document.getElementById('popupAdsEnabled').checked = !!config.popupAdsEnabled;
+                document.getElementById('luckySpinTitle').value = config.luckySpinTitle || '';
+                document.getElementById('luckySpinDescription').value = config.luckySpinDescription || '';
+                document.getElementById('luckySpinPopupDelay').value = config.luckySpinPopupDelay || 2200;
+                document.getElementById('popupAdsDelay').value = config.popupAdsDelay || 1800;
+
+                state.campaigns = Array.isArray(config.campaigns) ? config.campaigns : [];
+                state.rewards = Array.isArray(config.luckySpinRewards) ? config.luckySpinRewards : [];
+                state.popupAds = Array.isArray(config.popupAds) ? config.popupAds : [];
+
+                renderCampaigns();
+                renderRewards();
+                renderPopupAds();
+            } catch (error) {
+                showToast(error.message || 'Lỗi tải cấu hình', 'error', {
+                    description: 'Nếu vừa cập nhật code, hãy restart server rồi tải lại trang.'
+                });
+            }
+        }
+
+        async function saveAllConfig() {
+            try {
+                const payload = {
+                    campaignsEnabled: document.getElementById('campaignsEnabled').checked,
+                    campaigns: collectCampaigns(),
+                    luckySpinEnabled: document.getElementById('luckySpinEnabled').checked,
+                    luckySpinPopupEnabled: document.getElementById('luckySpinPopupEnabled').checked,
+                    luckySpinPopupDelay: Number(document.getElementById('luckySpinPopupDelay').value || 0),
+                    luckySpinTitle: document.getElementById('luckySpinTitle').value.trim(),
+                    luckySpinDescription: document.getElementById('luckySpinDescription').value.trim(),
+                    luckySpinRewards: collectRewards(),
+                    popupAdsEnabled: document.getElementById('popupAdsEnabled').checked,
+                    popupAdsDelay: Number(document.getElementById('popupAdsDelay').value || 0),
+                    popupAds: collectPopupAds()
+                };
+
+                await adminAPI.saveMarketingConfig(payload);
+                showToast('Đã lưu cấu hình Marketing Event', 'success');
+                loadConfig();
+            } catch (error) {
+                showToast(error.message || 'Lưu cấu hình thất bại', 'error');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('admin-sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
+    <script src="/js/push-client.js?v=4"></script>
+</body>
+
+</html>

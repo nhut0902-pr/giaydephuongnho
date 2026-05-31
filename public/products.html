@@ -2,11 +2,14 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sản Phẩm - Giày Dép Hương Nhớ</title>
     <link rel="icon" href="/favicon.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -61,10 +64,11 @@
     <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="js/api.js?v=2"></script>
+    <script src="js/api.js?v=4"></script>
     <script src="js/auth.js?v=2"></script>
     <script src="js/cart.js?v=2"></script>
-    <script src="js/main.js?v=2"></script>
+    <script src="js/main.js?v=8"></script>
+    <script>document.addEventListener('DOMContentLoaded', initPolicyNotice);</script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">
@@ -79,6 +83,7 @@
         })();
     </script>
     <!--End of Tawk.to Script-->
+    <script src="/js/push-client.js?v=4"></script>
 </body>
 
 </html>

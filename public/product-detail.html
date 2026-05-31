@@ -2,11 +2,14 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi Tiết Sản Phẩm - Giày Dép Hương Nhớ</title>
     <link rel="icon" href="/favicon.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -14,7 +17,8 @@
     <header class="header">
         <div class="header-container">
             <a href="/" class="logo"><img src="images/logo.jpg" alt="Giày Dép Hương Nhớ"></a>
-            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a></nav>
+            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a><a href="/blog.html">Bảng
+                    Tin</a></nav>
             <div class="header-actions">
                 <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-bag"></i><span
                         class="cart-count" id="cart-count">0</span></button>
@@ -45,13 +49,16 @@
     <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/api.js?v=4"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/cart.js?v=2"></script>
+    <script src="js/main.js?v=8"></script>
+    <script>document.addEventListener('DOMContentLoaded', initPolicyNotice);</script>
     <script>
         let currentProduct = null;
         let quantity = 1;
+        let selectedSize = null;
+        let selectedColor = null;
 
         async function loadProduct() {
             const id = new URLSearchParams(window.location.search).get('id');
@@ -66,7 +73,41 @@
                 document.title = `${currentProduct.name} - Giày Dép Hương Nhớ`;
 
                 const allImages = [currentProduct.image, ...(currentProduct.images || []).map(img => img.url)].filter(Boolean);
-                
+
+                // Variants HTML
+                let variantsHtml = '';
+                if ((currentProduct.sizes && currentProduct.sizes.length > 0) || (currentProduct.colors && currentProduct.colors.length > 0)) {
+                    variantsHtml = '<div class="product-variants">';
+
+                    if (currentProduct.sizes && currentProduct.sizes.length > 0) {
+                        variantsHtml += `
+                            <div class="variant-group">
+                                <span class="variant-label">Kích thước:</span>
+                                <div class="variant-options">
+                                    ${currentProduct.sizes.map(s => `
+                                        <button class="variant-btn" onclick="selectSize('${s}', this)">${s}</button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    if (currentProduct.colors && currentProduct.colors.length > 0) {
+                        variantsHtml += `
+                            <div class="variant-group">
+                                <span class="variant-label">Màu sắc:</span>
+                                <div class="variant-options">
+                                    ${currentProduct.colors.map(c => `
+                                        <button class="variant-btn" onclick="selectColor('${c}', this)">${c}</button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    variantsHtml += '</div>';
+                }
+
                 document.getElementById('product-detail').innerHTML = `
           <div class="product-gallery">
             <div class="main-image">
@@ -91,6 +132,9 @@
                         : formatPrice(currentProduct.price)}
             </div>
             <p class="product-detail-desc">${currentProduct.description || ''}</p>
+            
+            ${variantsHtml}
+
             <p style="color:var(--gray);margin-bottom:1rem"><i class="fas fa-box"></i> Còn ${currentProduct.stock} sản phẩm</p>
             <div class="quantity-selector">
               <label>Số lượng:</label>
@@ -138,21 +182,373 @@
 
         function changeMainImage(imageSrc, index) {
             document.getElementById('main-product-image').src = imageSrc;
-            
+
             // Update active thumbnail
             document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
                 thumb.classList.toggle('active', i === index);
             });
         }
 
+        function selectSize(size, btn) {
+            selectedSize = size;
+            // Remove active class from all size buttons
+            const buttons = btn.parentElement.querySelectorAll('.variant-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+        }
+
+        function selectColor(color, btn) {
+            selectedColor = color;
+            const buttons = btn.parentElement.querySelectorAll('.variant-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
         function addProductToCart() {
             if (currentProduct && currentProduct.stock > 0) {
-                addToCart(currentProduct.id, quantity, currentProduct);
+                // Validate selection
+                if (currentProduct.sizes && currentProduct.sizes.length > 0 && !selectedSize) {
+                    showToast('Vui lòng chọn kích thước', 'error');
+                    return;
+                }
+                if (currentProduct.colors && currentProduct.colors.length > 0 && !selectedColor) {
+                    showToast('Vui lòng chọn màu sắc', 'error');
+                    return;
+                }
+
+                addToCart(currentProduct.id, quantity, currentProduct, selectedSize, selectedColor);
             }
         }
 
         document.addEventListener('DOMContentLoaded', loadProduct);
     </script>
+
+    <!-- Review Section -->
+    <style>
+        .reviews-section {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .reviews-summary {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .reviews-avg {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #1A1135;
+        }
+
+        .reviews-stars {
+            color: #f59e0b;
+            font-size: 1.1rem;
+        }
+
+        .reviews-count {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .review-form {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .review-form h3 {
+            margin: 0 0 1rem;
+            font-size: 1.1rem;
+            color: #1A1135;
+        }
+
+        .star-picker {
+            display: flex;
+            gap: 0.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .star-picker button {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #d1d5db;
+            transition: color 0.15s, transform 0.15s;
+        }
+
+        .star-picker button.active,
+        .star-picker button:hover {
+            color: #f59e0b;
+            transform: scale(1.15);
+        }
+
+        .review-form textarea {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+        }
+
+        .review-form .btn {
+            margin-top: 0.75rem;
+        }
+
+        .review-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .review-card {
+            background: white;
+            border: 1px solid #f0f0f0;
+            border-radius: 14px;
+            padding: 1.2rem;
+        }
+
+        .review-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .review-user {
+            font-weight: 700;
+            color: #1A1135;
+        }
+
+        .review-date {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .review-card-stars {
+            color: #f59e0b;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .review-comment {
+            color: #444;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .vote-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: none;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.35rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.88rem;
+            color: #666;
+            transition: all 0.15s;
+        }
+
+        .vote-btn:hover {
+            border-color: #A948C8;
+            color: #A948C8;
+        }
+
+        .vote-btn.voted {
+            border-color: #A948C8;
+            background: #f3e8ff;
+            color: #A948C8;
+            font-weight: 700;
+        }
+
+        .review-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #aaa;
+        }
+
+        .review-login-hint {
+            text-align: center;
+            padding: 1rem;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .review-login-hint a {
+            color: #A948C8;
+            font-weight: 600;
+        }
+    </style>
+
+    <div class="reviews-section" id="reviews-section">
+        <div class="reviews-header">
+            <div class="reviews-summary">
+                <span class="reviews-avg" id="reviews-avg">0</span>
+                <div>
+                    <div class="reviews-stars" id="reviews-stars-summary">☆☆☆☆☆</div>
+                    <div class="reviews-count" id="reviews-count">0 đánh giá</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="review-form-container"></div>
+        <div class="review-list" id="review-list">
+            <div class="review-empty">Đang tải đánh giá...</div>
+        </div>
+    </div>
+
+    <script>
+        let selectedRating = 0;
+
+        function renderStars(rating, max = 5) {
+            return Array.from({ length: max }, (_, i) => i < rating ? '★' : '☆').join('');
+        }
+
+        function renderReviewForm() {
+            const container = document.getElementById('review-form-container');
+            if (!container) return;
+
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (!user) {
+                container.innerHTML = '<div class="review-login-hint"><a href="/login.html">Đăng nhập</a> để viết đánh giá</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="review-form">
+                    <h3>Viết đánh giá của bạn</h3>
+                    <div class="star-picker" id="star-picker">
+                        ${[1, 2, 3, 4, 5].map(i => `<button data-star="${i}" onclick="pickStar(${i})">☆</button>`).join('')}
+                    </div>
+                    <textarea id="review-comment" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."></textarea>
+                    <button class="btn btn-primary" onclick="submitReview()"><i class="fas fa-paper-plane"></i> Gửi đánh giá</button>
+                </div>
+            `;
+        }
+
+        function pickStar(n) {
+            selectedRating = n;
+            document.querySelectorAll('#star-picker button').forEach((btn, i) => {
+                btn.textContent = i < n ? '★' : '☆';
+                btn.classList.toggle('active', i < n);
+            });
+        }
+
+        async function submitReview() {
+            if (!selectedRating) {
+                showToast('Vui lòng chọn số sao', 'error');
+                return;
+            }
+            const comment = document.getElementById('review-comment')?.value || '';
+            const productId = new URLSearchParams(window.location.search).get('id');
+            try {
+                await reviewsAPI.create({ productId: Number(productId), rating: selectedRating, comment });
+                showToast('Đã gửi đánh giá!', 'success');
+                selectedRating = 0;
+                loadReviews(productId);
+            } catch (err) {
+                showToast(err.message || 'Lỗi gửi đánh giá', 'error');
+            }
+        }
+
+        async function voteReview(reviewId, vote) {
+            try {
+                const result = await reviewsAPI.vote(reviewId, vote);
+                // Update UI inline
+                const card = document.querySelector(`.review-card[data-id="${reviewId}"]`);
+                if (card) {
+                    card.querySelector('.like-count').textContent = result.likes;
+                    card.querySelector('.dislike-count').textContent = result.dislikes;
+                    const likeBtn = card.querySelector('.vote-like');
+                    const dislikeBtn = card.querySelector('.vote-dislike');
+                    likeBtn.classList.toggle('voted', result.userVote === 'like');
+                    dislikeBtn.classList.toggle('voted', result.userVote === 'dislike');
+                }
+            } catch (err) {
+                showToast(err.message || 'Vui lòng đăng nhập để vote', 'error');
+            }
+        }
+
+        function renderReviewList(data) {
+            const list = document.getElementById('review-list');
+            if (!list) return;
+
+            // Summary
+            document.getElementById('reviews-avg').textContent = data.avgRating || 0;
+            document.getElementById('reviews-stars-summary').textContent = renderStars(Math.round(data.avgRating));
+            document.getElementById('reviews-count').textContent = `${data.total} đánh giá`;
+
+            if (!data.reviews || data.reviews.length === 0) {
+                list.innerHTML = '<div class="review-empty">Chưa có đánh giá nào. Hãy là người đầu tiên!</div>';
+                return;
+            }
+
+            list.innerHTML = data.reviews.map(r => `
+                <div class="review-card" data-id="${r.id}">
+                    <div class="review-card-header">
+                        <span class="review-user"><i class="fas fa-user-circle"></i> ${r.userName}</span>
+                        <span class="review-date">${new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                    <div class="review-card-stars">${renderStars(r.rating)}</div>
+                    ${r.comment ? `<div class="review-comment">${r.comment}</div>` : ''}
+                    <div class="review-actions">
+                        <button class="vote-btn vote-like ${r.userVote === 'like' ? 'voted' : ''}" onclick="voteReview(${r.id}, 'like')">
+                            👍 <span class="like-count">${r.likes}</span>
+                        </button>
+                        <button class="vote-btn vote-dislike ${r.userVote === 'dislike' ? 'voted' : ''}" onclick="voteReview(${r.id}, 'dislike')">
+                            👎 <span class="dislike-count">${r.dislikes}</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadReviews(productId) {
+            try {
+                const data = await reviewsAPI.getByProduct(productId);
+                renderReviewForm();
+                renderReviewList(data);
+            } catch (err) {
+                document.getElementById('review-list').innerHTML = '<div class="review-empty">Lỗi tải đánh giá</div>';
+            }
+        }
+
+        // Load reviews after product loads
+        const origLoadProduct = loadProduct;
+        loadProduct = async function () {
+            await origLoadProduct();
+            const productId = new URLSearchParams(window.location.search).get('id');
+            if (productId) loadReviews(productId);
+        };
+    </script>
+    <script src="/js/push-client.js?v=5"></script>
 </body>
 
 </html>

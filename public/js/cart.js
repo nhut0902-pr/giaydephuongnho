@@ -54,20 +54,31 @@ function clearLocalCart() {
     localStorage.removeItem(LOCAL_CART_KEY);
 }
 
-async function addToCart(productId, quantity = 1, product = null) {
+async function addToCart(productId, quantity = 1, product = null, size = null, color = null) {
     try {
         if (isLoggedIn()) {
-            await cartAPI.add(productId, quantity);
+            await cartAPI.add(productId, quantity, size, color);
             await loadCart(true); // Force reload
         } else {
             const localCart = getLocalCart();
-            const existingIndex = localCart.findIndex(item => item.productId === productId);
+            const existingIndex = localCart.findIndex(item =>
+                item.productId === productId &&
+                item.size === size &&
+                item.color === color
+            );
 
             if (existingIndex >= 0) {
                 localCart[existingIndex].quantity += quantity;
             } else {
                 if (!product) product = await productsAPI.getById(productId);
-                localCart.push({ id: Date.now(), productId, quantity, Product: product });
+                localCart.push({
+                    id: Date.now(),
+                    productId,
+                    quantity,
+                    Product: product,
+                    size,
+                    color
+                });
             }
             saveLocalCart(localCart);
             cartItems = localCart;
@@ -145,7 +156,13 @@ function updateCartUI() {
             cartItemsEl.innerHTML = cartItems.map(item => {
                 const p = item.Product;
                 if (!p) return '';
-                return `<div class="cart-item"><div class="cart-item-image"><img src="${p.image || ''}" alt="${p.name}"></div><div class="cart-item-info"><div class="cart-item-name">${p.name}</div><div class="cart-item-price">${formatPrice(p.price)}</div><div class="cart-item-quantity"><button class="quantity-btn" onclick="updateCartItem(${item.id}, ${item.quantity - 1})">-</button><span>${item.quantity}</span><button class="quantity-btn" onclick="updateCartItem(${item.id}, ${item.quantity + 1})">+</button></div></div><button class="cart-item-remove" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button></div>`;
+                // Render variant info
+                const variantInfo = [];
+                if (item.size) variantInfo.push(`Size: ${item.size}`);
+                if (item.color) variantInfo.push(`Màu: ${item.color}`);
+                const variantHtml = variantInfo.length > 0 ? `<div class="cart-item-variant">${variantInfo.join(' | ')}</div>` : '';
+
+                return `<div class="cart-item"><div class="cart-item-image"><img src="${p.image || ''}" alt="${p.name}"></div><div class="cart-item-info"><div class="cart-item-name">${p.name}</div>${variantHtml}<div class="cart-item-price">${formatPrice(p.price)}</div><div class="cart-item-quantity"><button class="quantity-btn" onclick="updateCartItem(${item.id}, ${item.quantity - 1})">-</button><span>${item.quantity}</span><button class="quantity-btn" onclick="updateCartItem(${item.id}, ${item.quantity + 1})">+</button></div></div><button class="cart-item-remove" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button></div>`;
             }).join('');
         }
     }

@@ -2,11 +2,14 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giỏ Hàng - Giày Dép Hương Nhớ</title>
     <link rel="icon" href="/favicon.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -14,7 +17,8 @@
     <header class="header">
         <div class="header-container">
             <a href="/" class="logo"><img src="images/logo.jpg" alt="Giày Dép Hương Nhớ"></a>
-            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a></nav>
+            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a><a href="/blog.html">Bảng
+                    Tin</a></nav>
             <div class="header-actions">
                 <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-bag"></i><span
                         class="cart-count" id="cart-count">0</span></button>
@@ -60,10 +64,11 @@
     <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/api.js?v=4"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/cart.js?v=2"></script>
+    <script src="js/main.js?v=8"></script>
+    <script>document.addEventListener('DOMContentLoaded', initPolicyNotice);</script>
     <script>
         function renderCartPage() {
             const container = document.getElementById('cart-page-items');
@@ -111,6 +116,7 @@
             renderCartPage();
         });
     </script>
+    <script src="/js/push-client.js?v=4"></script>
 </body>
 
 </html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Blog - Admin</title>
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg">
+    <link rel="stylesheet" href="../css/style.css?v=6">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .blog-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .blog-table th,
+        .blog-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .blog-table th {
+            font-size: 0.85rem;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .blog-table td {
+            font-size: 0.9rem;
+        }
+
+        .blog-thumb {
+            width: 60px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .blog-title-cell {
+            font-weight: 700;
+            color: #1A1135;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge-published {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .badge-draft {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .modal-blog {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-blog.active {
+            display: flex;
+        }
+
+        .modal-blog-body {
+            background: white;
+            border-radius: 16px;
+            max-width: 700px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-blog-body h2 {
+            margin: 0 0 1.5rem;
+            color: #1A1135;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .blog-content-editor {
+            min-height: 200px;
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .upload-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .thumb-preview {
+            max-width: 200px;
+            max-height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            display: none;
+        }
+
+        .thumb-preview.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .blog-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-logo">
+                <span class="admin-close-btn" onclick="toggleSidebar()"
+                    style="display:none;cursor:pointer;margin-right:10px"><i class="fas fa-times"></i></span>
+                👟 Admin Panel
+            </div>
+            <nav class="admin-nav">
+                <a href="/admin/"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/admin/orders.html"><i class="fas fa-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
+                <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
+                <a href="/admin/flash-sale.html"><i class="fas fa-bolt"></i> Flash Sale</a>
+                <a href="/admin/marketing.html"><i class="fas fa-bullhorn"></i> Marketing Event</a>
+                <a href="/admin/blog.html" class="active"><i class="fas fa-newspaper"></i> Blog / Bảng Tin</a>
+                <a href="/admin/users.html"><i class="fas fa-users"></i> Người Dùng</a>
+                <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <div style="display:flex;align-items:center">
+                    <i class="fas fa-bars admin-toggle" onclick="toggleSidebar()" style="display:none"></i>
+                    <h1>Blog / Bảng Tin</h1>
+                </div>
+                <button class="btn btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Viết bài mới</button>
+            </div>
+
+            <div class="admin-card" style="display:block">
+                <table class="blog-table">
+                    <thead>
+                        <tr>
+                            <th>Ảnh</th>
+                            <th>Tiêu đề</th>
+                            <th>Danh mục</th>
+                            <th>Trạng thái</th>
+                            <th>Lượt xem</th>
+                            <th>Ngày tạo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="blog-table-body">
+                        <tr>
+                            <td colspan="7" style="text-align:center;padding:2rem;color:#aaa">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div class="modal-blog" id="blog-modal">
+        <div class="modal-blog-body">
+            <h2 id="modal-title">Viết bài mới</h2>
+            <input type="hidden" id="edit-id">
+            <div class="form-group">
+                <label>Tiêu đề *</label>
+                <input id="blog-title" type="text" placeholder="Nhập tiêu đề bài viết">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Danh mục</label>
+                    <input id="blog-category" type="text" value="Tin tức"
+                        placeholder="Ví dụ: Tin tức, Xu hướng, Mẹo hay">
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:28px">
+                    <input type="checkbox" id="blog-published"> <label for="blog-published" style="margin:0">Xuất bản
+                        ngay</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Ảnh đại diện</label>
+                <div class="upload-area">
+                    <input id="blog-thumbnail-url" type="text" placeholder="URL ảnh hoặc tải ảnh lên">
+                    <input type="file" id="blog-thumbnail-file" accept="image/*" style="display:none">
+                    <button class="btn btn-secondary" id="upload-thumb-btn" type="button"
+                        onclick="document.getElementById('blog-thumbnail-file').click()"><i class="fas fa-upload"></i>
+                        Tải ảnh</button>
+                </div>
+                <img id="thumb-preview" class="thumb-preview" alt="Preview">
+            </div>
+            <div class="form-group">
+                <label>Tóm tắt</label>
+                <textarea id="blog-excerpt" rows="2"
+                    placeholder="Mô tả ngắn về bài viết (tự tạo nếu bỏ trống)"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Nội dung * (hỗ trợ HTML)</label>
+                <textarea id="blog-content" class="blog-content-editor" rows="12"
+                    placeholder="Viết nội dung bài viết ở đây. Hỗ trợ thẻ HTML như <p>, <h2>, <img>, <strong>..."></textarea>
+            </div>
+            <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:1.5rem">
+                <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+                <button class="btn btn-primary" onclick="saveBlog()"><i class="fas fa-save"></i> Lưu bài viết</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../js/api.js?v=4"></script>
+    <script src="../js/auth.js?v=2"></script>
+    <script src="../js/main.js?v=8"></script>
+    <script>
+        async function loadBlogList() {
+            if (!(await requireAdmin())) return;
+
+            try {
+                const posts = await blogAPI.adminGetAll();
+                const tbody = document.getElementById('blog-table-body');
+
+                if (!posts || posts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#aaa"><i class="fas fa-newspaper"></i> Chưa có bài viết. Nhấn "Viết bài mới" để bắt đầu!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = posts.map(post => `
+                    <tr>
+                        <td>${post.thumbnail ? `<img class="blog-thumb" src="${post.thumbnail}" alt="">` : '<span style="color:#ddd"><i class="fas fa-image fa-2x"></i></span>'}</td>
+                        <td class="blog-title-cell">${post.title}</td>
+                        <td>${post.category || 'Tin tức'}</td>
+                        <td><span class="${post.published ? 'badge-published' : 'badge-draft'}">${post.published ? 'Đã xuất bản' : 'Nháp'}</span></td>
+                        <td>${post.views || 0}</td>
+                        <td>${new Date(post.createdAt).toLocaleDateString('vi-VN')}</td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding:0.35rem 0.6rem;font-size:0.85rem" onclick="editBlog(${post.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger" style="padding:0.35rem 0.6rem;font-size:0.85rem" onclick="deleteBlog(${post.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                showToast(error.message || 'Lỗi tải danh sách', 'error');
+            }
+        }
+
+        let allPosts = [];
+        async function loadAllForEdit() {
+            try { allPosts = await blogAPI.adminGetAll(); } catch (e) { allPosts = []; }
+        }
+
+        function openModal(post = null) {
+            document.getElementById('modal-title').textContent = post ? 'Chỉnh sửa bài viết' : 'Viết bài mới';
+            document.getElementById('edit-id').value = post ? post.id : '';
+            document.getElementById('blog-title').value = post ? post.title : '';
+            document.getElementById('blog-category').value = post ? (post.category || 'Tin tức') : 'Tin tức';
+            document.getElementById('blog-published').checked = post ? post.published : false;
+            document.getElementById('blog-thumbnail-url').value = post ? (post.thumbnail || '') : '';
+            document.getElementById('blog-excerpt').value = post ? (post.excerpt || '') : '';
+            document.getElementById('blog-content').value = post ? (post.content || '') : '';
+
+            const preview = document.getElementById('thumb-preview');
+            if (post && post.thumbnail) { preview.src = post.thumbnail; preview.classList.add('show'); }
+            else { preview.classList.remove('show'); }
+
+            document.getElementById('blog-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('blog-modal').classList.remove('active');
+        }
+
+        async function editBlog(id) {
+            if (!allPosts.length) await loadAllForEdit();
+            const post = allPosts.find(p => p.id === id);
+            if (post) openModal(post);
+        }
+
+        async function saveBlog() {
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                title: document.getElementById('blog-title').value.trim(),
+                category: document.getElementById('blog-category').value.trim() || 'Tin tức',
+                published: document.getElementById('blog-published').checked,
+                thumbnail: document.getElementById('blog-thumbnail-url').value.trim(),
+                excerpt: document.getElementById('blog-excerpt').value.trim(),
+                content: document.getElementById('blog-content').value.trim()
+            };
+
+            if (!data.title || !data.content) {
+                showToast('Tiêu đề và nội dung là bắt buộc', 'error');
+                return;
+            }
+
+            try {
+                if (id) {
+                    await blogAPI.update(id, data);
+                    showToast('Đã cập nhật bài viết!', 'success');
+                } else {
+                    await blogAPI.create(data);
+                    showToast('Đã tạo bài viết mới!', 'success');
+                }
+                closeModal();
+                loadBlogList();
+                loadAllForEdit();
+            } catch (error) {
+                showToast(error.message || 'Lỗi lưu bài viết', 'error');
+            }
+        }
+
+        async function deleteBlog(id) {
+            if (!confirm('Xóa bài viết này?')) return;
+            try {
+                await blogAPI.delete(id);
+                showToast('Đã xóa bài viết', 'success');
+                loadBlogList();
+                loadAllForEdit();
+            } catch (error) {
+                showToast(error.message || 'Lỗi xóa bài viết', 'error');
+            }
+        }
+
+        // Thumbnail upload
+        document.getElementById('blog-thumbnail-file').addEventListener('change', async function () {
+            if (!this.files || !this.files[0]) return;
+            const btn = document.getElementById('upload-thumb-btn');
+            const prevHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...';
+
+            const formData = new FormData();
+            formData.append('image', this.files[0]);
+            const token = localStorage.getItem('token');
+
+            try {
+                const resp = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.url) {
+                    document.getElementById('blog-thumbnail-url').value = data.url;
+                    const preview = document.getElementById('thumb-preview');
+                    preview.src = data.url;
+                    preview.classList.add('show');
+                    showToast('Đã tải ảnh', 'success');
+                }
+            } catch (err) {
+                showToast('Lỗi tải ảnh', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = prevHtml;
+                this.value = '';
+            }
+        });
+
+        // Thumbnail URL preview
+        document.getElementById('blog-thumbnail-url').addEventListener('input', function () {
+            const preview = document.getElementById('thumb-preview');
+            if (this.value.trim()) { preview.src = this.value.trim(); preview.classList.add('show'); }
+            else { preview.classList.remove('show'); }
+        });
+
+        function toggleSidebar() {
+            document.getElementById('admin-sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBlogList();
+            loadAllForEdit();
+        });
+    </script>
+</body>
+
+</html>

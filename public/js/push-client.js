@@ -4,8 +4,19 @@
 const PushClient = {
     vapidPublicKey: null,
     swRegistration: null,
+    swUrl: '/sw.js?v=20260220-3',
 
-    // Initialize push notifications
+    async cleanupLegacyServiceWorkers() {
+        if (!('serviceWorker' in navigator)) return;
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(async (reg) => {
+            const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || '';
+            if (!scriptURL.includes(this.swUrl)) {
+                await reg.unregister();
+            }
+        }));
+    },
+
     async init() {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
             console.log('Push notifications not supported');
@@ -13,12 +24,20 @@ const PushClient = {
         }
 
         try {
-            // Register service worker
-            this.swRegistration = await navigator.serviceWorker.register('/sw.js');
+            await this.cleanupLegacyServiceWorkers();
+
+            this.swRegistration = await navigator.serviceWorker.register(this.swUrl, {
+                scope: '/',
+                updateViaCache: 'none'
+            });
             console.log('Service Worker registered');
 
-            // Get VAPID public key
-            const response = await fetch('/api/push/vapid-public-key');
+            if (this.swRegistration.waiting) {
+                this.swRegistration.waiting.postMessage('SKIP_WAITING');
+            }
+            await this.swRegistration.update().catch(() => { });
+
+            const response = await fetch(`${API_URL}/push/vapid-public-key`);
             const data = await response.json();
             this.vapidPublicKey = data.publicKey;
 
@@ -29,20 +48,17 @@ const PushClient = {
         }
     },
 
-    // Check if already subscribed
     async isSubscribed() {
         if (!this.swRegistration) return false;
         const subscription = await this.swRegistration.pushManager.getSubscription();
         return !!subscription;
     },
 
-    // Request notification permission
     async requestPermission() {
         const permission = await Notification.requestPermission();
         return permission === 'granted';
     },
 
-    // Subscribe to push notifications
     async subscribe(role = 'customer') {
         try {
             const permission = await this.requestPermission();
@@ -51,18 +67,15 @@ const PushClient = {
                 return null;
             }
 
-            // Convert VAPID key
             const applicationServerKey = this.urlBase64ToUint8Array(this.vapidPublicKey);
 
-            // Subscribe
             const subscription = await this.swRegistration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey
             });
 
-            // Send subscription to server
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/push/subscribe', {
+            const response = await fetch(`${API_URL}/push/subscribe`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -86,14 +99,13 @@ const PushClient = {
         }
     },
 
-    // Unsubscribe from push notifications
     async unsubscribe() {
         try {
             const subscription = await this.swRegistration.pushManager.getSubscription();
             if (subscription) {
                 await subscription.unsubscribe();
 
-                await fetch('/api/push/unsubscribe', {
+                await fetch(`${API_URL}/push/unsubscribe`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ endpoint: subscription.endpoint })
@@ -109,7 +121,6 @@ const PushClient = {
         }
     },
 
-    // Helper: Convert VAPID key
     urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
         const base64 = (base64String + padding)
@@ -125,33 +136,30 @@ const PushClient = {
         return outputArray;
     },
 
-    // Show permission popup
+    // Mandatory permission popup — no dismiss, must accept
     showPermissionPopup() {
-        // Check if already shown or subscribed
-        if (localStorage.getItem('push_popup_shown') === 'true') {
-            return;
-        }
+        // If already showing, don't duplicate
+        if (document.getElementById('push-permission-popup')) return;
 
-        // Create popup
         const popup = document.createElement('div');
         popup.id = 'push-permission-popup';
         popup.innerHTML = `
             <div class="push-popup-overlay">
                 <div class="push-popup">
                     <div class="push-popup-icon">🔔</div>
-                    <h3>Nhận thông báo?</h3>
-                    <p>Bạn sẽ được thông báo khi có khuyến mãi mới, sản phẩm mới và cập nhật đơn hàng!</p>
+                    <h3>Bật thông báo để cập nhật!</h3>
+                    <p>Bạn cần bật thông báo để nhận cập nhật đơn hàng, sản phẩm mới và khuyến mãi hấp dẫn.</p>
+                    <div class="push-popup-badge">⚠️ Bắt buộc</div>
                     <div class="push-popup-actions">
-                        <button class="btn btn-secondary" onclick="PushClient.dismissPopup()">Để sau</button>
-                        <button class="btn btn-primary" onclick="PushClient.acceptPush()">Đồng ý</button>
+                        <button id="push-accept-btn" class="btn btn-primary" onclick="PushClient.acceptPush()">🔔 Đồng ý bật thông báo</button>
                     </div>
                 </div>
             </div>
         `;
         document.body.appendChild(popup);
 
-        // Add styles
         const style = document.createElement('style');
+        style.id = 'push-popup-style';
         style.textContent = `
             .push-popup-overlay {
                 position: fixed;
@@ -159,7 +167,7 @@ const PushClient = {
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(0,0,0,0.5);
+                background: rgba(0,0,0,0.6);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -169,35 +177,55 @@ const PushClient = {
             .push-popup {
                 background: white;
                 padding: 2rem;
-                border-radius: 1rem;
+                border-radius: 1.2rem;
                 max-width: 400px;
+                width: 90%;
                 text-align: center;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                box-shadow: 0 20px 60px rgba(0,0,0,0.35);
                 animation: slideUp 0.3s ease;
             }
             .push-popup-icon {
-                font-size: 3rem;
-                margin-bottom: 1rem;
+                font-size: 3.5rem;
+                margin-bottom: 0.75rem;
             }
             .push-popup h3 {
                 margin: 0 0 0.5rem;
-                color: #333;
+                color: #1A1135;
+                font-size: 1.2rem;
             }
             .push-popup p {
                 color: #666;
-                margin-bottom: 1.5rem;
-                font-size: 0.95rem;
+                margin-bottom: 1rem;
+                font-size: 0.92rem;
+                line-height: 1.5;
+            }
+            .push-popup-badge {
+                display: inline-block;
+                background: #FEF3C7;
+                color: #92400E;
+                padding: 0.35rem 1rem;
+                border-radius: 2rem;
+                font-size: 0.82rem;
+                font-weight: 700;
+                margin-bottom: 1.2rem;
             }
             .push-popup-actions {
                 display: flex;
-                gap: 1rem;
                 justify-content: center;
             }
             .push-popup-actions .btn {
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
+                padding: 0.85rem 2rem;
+                border-radius: 0.75rem;
                 cursor: pointer;
-                font-weight: 600;
+                font-weight: 700;
+                font-size: 0.95rem;
+                border: none;
+                background: linear-gradient(135deg, #A948C8, #4B61B5);
+                color: white;
+                transition: transform 0.15s;
+            }
+            .push-popup-actions .btn:hover {
+                transform: scale(1.03);
             }
             @keyframes fadeIn {
                 from { opacity: 0; }
@@ -208,28 +236,47 @@ const PushClient = {
                 to { transform: translateY(0); opacity: 1; }
             }
         `;
-        document.head.appendChild(style);
-    },
-
-    // Accept push notifications
-    async acceptPush() {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const role = user.role === 'admin' ? 'admin' : 'customer';
-
-        await this.subscribe(role);
-        this.dismissPopup();
-        localStorage.setItem('push_popup_shown', 'true');
-
-        if (typeof showToast === 'function') {
-            showToast('Đã bật thông báo!', 'success');
+        if (!document.getElementById('push-popup-style')) {
+            document.head.appendChild(style);
         }
     },
 
-    // Dismiss popup
+    async acceptPush() {
+        const btn = document.getElementById('push-accept-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '⌛ Đang xử lý...';
+            btn.style.opacity = '0.7';
+        }
+
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const role = user.role === 'admin' ? 'admin' : 'customer';
+
+        const result = await this.subscribe(role);
+        if (result) {
+            this.dismissPopup();
+            if (typeof showToast === 'function') {
+                showToast('Đã bật thông báo thành công!', 'success');
+            }
+        } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '🔔 Đồng ý bật thông báo';
+                btn.style.opacity = '1';
+            }
+            // Permission denied by browser — show a help message
+            if (Notification.permission === 'denied') {
+                if (typeof showToast === 'function') {
+                    showToast('Trình duyệt đã chặn thông báo. Vui lòng bật lại trong cài đặt.', 'warning', { duration: 6000 });
+                }
+                this.dismissPopup(); // Can't do anything if browser blocked
+            }
+        }
+    },
+
     dismissPopup() {
         const popup = document.getElementById('push-permission-popup');
         if (popup) popup.remove();
-        localStorage.setItem('push_popup_shown', 'true');
     }
 };
 
@@ -243,24 +290,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (initialized) {
         const isSubscribed = await PushClient.isSubscribed();
         console.log('[Push] Is subscribed:', isSubscribed);
-        console.log('[Push] Notification permission:', Notification.permission);
-        console.log('[Push] Popup shown before:', localStorage.getItem('push_popup_shown'));
 
         if (!isSubscribed && Notification.permission !== 'denied') {
-            console.log('[Push] Will show popup in 3 seconds...');
-            // Show popup after 3 seconds
+            // Show mandatory popup after 2 seconds
             setTimeout(() => {
-                console.log('[Push] Showing popup now');
                 PushClient.showPermissionPopup();
-            }, 3000);
-        } else {
-            console.log('[Push] Skipping popup - already subscribed or denied');
+            }, 2000);
         }
-    } else {
-        console.log('[Push] Initialization failed - showing popup anyway for testing');
-        // Show popup even if init fails for testing
-        setTimeout(() => {
-            PushClient.showPermissionPopup();
-        }, 3000);
     }
 });

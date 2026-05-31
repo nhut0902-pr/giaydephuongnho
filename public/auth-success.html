@@ -2,66 +2,90 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập thành công - Giày Dép Hương Nhớ</title>
     <link rel="icon" href="/favicon.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Montserrat:wght@400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css?v=6">
 </head>
 
 <body>
     <div
         style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:2rem;text-align:center">
-        <div class="custom-loader" style="margin-bottom:2rem"></div>
-        <h2>Đang đăng nhập...</h2>
+
+        <div class="loader-container" style="margin-bottom: 2rem;">
+            <!-- SVG Icon Cửa hàng -->
+            <svg id="store-logo" width="160" height="140" viewBox="0 0 160 140" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#A948C8" />
+                        <stop offset="100%" stop-color="#4B61B5" />
+                    </linearGradient>
+                </defs>
+
+                <g transform="translate(10, 10)">
+                    <line class="icon-part" x1="0" y1="120" x2="140" y2="120" />
+                    <rect class="icon-part" x="10" y="32" width="120" height="88" />
+                    <rect class="icon-part" x="6" y="24" width="128" height="8" rx="1" />
+                    <path class="icon-part"
+                        d="M 10 32 A 7.5 7.5 0 0 0 25 32 A 7.5 7.5 0 0 0 40 32 A 7.5 7.5 0 0 0 55 32 A 7.5 7.5 0 0 0 70 32 A 7.5 7.5 0 0 0 85 32 A 7.5 7.5 0 0 0 100 32 A 7.5 7.5 0 0 0 115 32 A 7.5 7.5 0 0 0 130 32" />
+                    <rect class="icon-part" x="18" y="48" width="28" height="72" />
+                    <line class="icon-part thin" x1="18" y1="65" x2="46" y2="65" />
+                    <line class="icon-part thin" x1="24" y1="85" x2="24" y2="95" />
+                    <rect class="icon-part" x="55" y="48" width="65" height="72" />
+                    <rect class="icon-part thin" x="62" y="55" width="51" height="58" />
+                    <g transform="translate(68, 62)">
+                        <rect class="icon-part thin" x="15" y="0" width="15" height="12" />
+                        <circle class="icon-part thin" cx="22.5" cy="6" r="1" />
+                        <path class="icon-part thin" d="M 38 40 L 38 15 L 22 15 L 22 25 Q 15 25 2 35 L 2 40 Z" />
+                        <line class="icon-part thin" x1="-2" y1="45" x2="44" y2="45" />
+                    </g>
+                </g>
+            </svg>
+            <div class="logo-text">
+                <h1 class="main-title">Giày dép Hương Nhớ</h1>
+                <p class="sub-title">ÊM ÁI VÀ QUYẾN RŨ</p>
+            </div>
+        </div>
+
+        <h2>Đang xác thực...</h2>
         <p style="color:var(--gray)">Vui lòng đợi trong giây lát</p>
     </div>
-    <style>
-        .custom-loader {
-            width: 70px;
-            height: 70px;
-            background: #d4a373;
-            border-radius: 50px;
-            -webkit-mask: radial-gradient(circle 31px at 50% calc(100% + 13px), #000 95%, #0000) top 4px left 50%,
-                radial-gradient(circle 31px, #000 95%, #0000) center,
-                radial-gradient(circle 31px at 50% -13px, #000 95%, #0000) bottom 4px left 50%,
-                linear-gradient(#000 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            -webkit-mask-repeat: no-repeat;
-            animation: cu10 1.5s infinite;
-        }
 
-        @keyframes cu10 {
-            0% {
-                -webkit-mask-size: 0 18px, 0 18px, 0 18px, auto
-            }
-
-            16.67% {
-                -webkit-mask-size: 100% 18px, 0 18px, 0 18px, auto
-            }
-
-            33.33% {
-                -webkit-mask-size: 100% 18px, 100% 18px, 0 18px, auto
-            }
-
-            50% {
-                -webkit-mask-size: 100% 18px, 100% 18px, 100% 18px, auto
-            }
-
-            66.67% {
-                -webkit-mask-size: 0 18px, 100% 18px, 100% 18px, auto
-            }
-
-            83.33% {
-                -webkit-mask-size: 0 18px, 0 18px, 100% 18px, auto
-            }
-
-            100% {
-                -webkit-mask-size: 0 18px, 0 18px, 0 18px, auto
-            }
-        }
-    </style>
+    <!-- Script tính toán đường vẽ SVG tự động -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const paths = document.querySelectorAll('.icon-part');
+            paths.forEach(path => {
+                let length = 0;
+                if (path.tagName.toLowerCase() === 'path') {
+                    length = path.getTotalLength();
+                } else if (path.tagName.toLowerCase() === 'circle') {
+                    const r = path.getAttribute('r');
+                    length = 2 * Math.PI * r;
+                } else if (path.tagName.toLowerCase() === 'line') {
+                    const x1 = path.getAttribute('x1');
+                    const y1 = path.getAttribute('y1');
+                    const x2 = path.getAttribute('x2');
+                    const y2 = path.getAttribute('y2');
+                    length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                } else if (path.tagName.toLowerCase() === 'rect') {
+                    const w = path.getAttribute('width');
+                    const h = path.getAttribute('height');
+                    length = (w * 2) + (h * 2);
+                }
+                const totalLength = length + 5;
+                path.style.setProperty('--path-length', totalLength);
+            });
+        });
+    </script>
     <script>
         const params = new URLSearchParams(window.location.search);
         const token = params.get('token');
@@ -88,6 +112,7 @@
         })();
     </script>
     <!--End of Tawk.to Script-->
+    <script src="/js/push-client.js?v=4"></script>
 </body>
 
 </html>

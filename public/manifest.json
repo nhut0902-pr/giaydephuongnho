@@ -1,0 +1,21 @@
+{
+    "name": "Giày Dép Hương Nhớ",
+    "short_name": "Hương Nhớ",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "description": "Cửa hàng giày dép thời trang uy tín chất lượng",
+    "icons": [
+        {
+            "src": "/images/logo.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg"
+        },
+        {
+            "src": "/images/logo.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg"
+        }
+    ]
+}

@@ -2,6 +2,9 @@
 <html lang="vi">
 
 <head>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="apple-touch-icon" href="/images/logo.jpg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Giày Dép Hương Nhớ - Thời Trang Giày Dép Cao Cấp | Shop Online Chính Hãng</title>
@@ -14,19 +17,19 @@
     content="giày dép, shop giày, giày thời trang, sneaker, sandal, giày cao gót, giày thể thao, giày nam, giày nữ, Khánh Hòa, Hương Nhớ">
   <meta name="author" content="Giày Dép Hương Nhớ">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://giaydephuongnho.com/">
+  <link rel="canonical" href="https://giaydephuongnho.netlify.app/">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://giaydephuongnho.com/">
-  <meta property="og:title" content="Giày Dép Hương Nhớ - Thời Trang Giày Dép Cao Cấp">
+  <meta property="og:url" content="https://giaydephuongnho.netlify.app/">
+  <meta property="og:title" content="Giày Dép Hương Nhớ - Thời Trang Đẳng Cấp">
   <meta property="og:description"
     content="Khám phá bộ sưu tập giày dép thời trang cao cấp. Đa dạng mẫu mã, chất lượng vượt trội, giá cả hợp lý.">
   <meta property="og:image" content="https://ik.imagekit.io/giaydephuongnho/og-image.jpg">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://giaydephuongnho.com/">
+  <meta property="twitter:url" content="https://giaydephuongnho.netlify.app/">
   <meta property="twitter:title" content="Giày Dép Hương Nhớ - Shop Giày Dép Thời Trang">
   <meta property="twitter:description"
     content="Sneaker, sandal, giày cao gót, giày thể thao - Đa dạng mẫu mã, giao hàng toàn quốc.">
@@ -38,7 +41,7 @@
     "@type": "Store",
     "name": "Giày Dép Hương Nhớ",
     "description": "Cửa hàng giày dép thời trang cao cấp",
-    "url": "https://giaydephuongnho.com",
+    "url": "https://giaydephuongnho.netlify.app",
     "telephone": "+84916813067",
     "email": "lamminhnhut09022011@gmail.com",
     "address": {
@@ -51,15 +54,77 @@
   }
   </script>
 
-  <link rel="stylesheet" href="css/style.css?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Montserrat:wght@400&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=6">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
   <!-- Page Loader -->
-  <div class="page-loader" id="page-loader">
-    <div class="custom-loader"></div>
-    <p>Đang tải...</p>
+  <div class="page-loader" id="page-loader" aria-live="polite">
+    <div class="loader-container">
+      <!-- SVG Icon Cửa hàng -->
+      <svg id="store-logo" width="160" height="140" viewBox="0 0 160 140" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Khởi tạo dải màu Gradient y hệt bản gốc (Từ Tím sang Xanh dương) -->
+          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#A948C8" />
+            <stop offset="100%" stop-color="#4B61B5" />
+          </linearGradient>
+        </defs>
+
+        <!-- Group chứa các thành phần của cửa hàng -->
+        <g transform="translate(10, 10)">
+          <!-- Nền nhà / vạch kẻ ngang dưới cùng -->
+          <line class="icon-part" x1="0" y1="120" x2="140" y2="120" />
+
+          <!-- Thân chính của cửa hàng -->
+          <rect class="icon-part" x="10" y="32" width="120" height="88" />
+
+          <!-- Mái hiên sọc (Awning) -->
+          <!-- Khối chữ nhật mái trên -->
+          <rect class="icon-part" x="6" y="24" width="128" height="8" rx="1" />
+          <!-- Các đường cong lượn sóng của mái hiên -->
+          <path class="icon-part"
+            d="M 10 32 A 7.5 7.5 0 0 0 25 32 A 7.5 7.5 0 0 0 40 32 A 7.5 7.5 0 0 0 55 32 A 7.5 7.5 0 0 0 70 32 A 7.5 7.5 0 0 0 85 32 A 7.5 7.5 0 0 0 100 32 A 7.5 7.5 0 0 0 115 32 A 7.5 7.5 0 0 0 130 32" />
+
+          <!-- Cửa ra vào (Trái) -->
+          <rect class="icon-part" x="18" y="48" width="28" height="72" />
+          <!-- Ô kính trên cửa -->
+          <line class="icon-part thin" x1="18" y1="65" x2="46" y2="65" />
+          <!-- Tay nắm cửa -->
+          <line class="icon-part thin" x1="24" y1="85" x2="24" y2="95" />
+
+          <!-- Tủ kính trưng bày (Phải) -->
+          <rect class="icon-part" x="55" y="48" width="65" height="72" />
+          <!-- Viền trong của tủ kính -->
+          <rect class="icon-part thin" x="62" y="55" width="51" height="58" />
+
+          <!-- Hình chiếc giày bên trong tủ -->
+          <g transform="translate(68, 62)">
+            <!-- Hộp vuông nhỏ phía trên giày -->
+            <rect class="icon-part thin" x="15" y="0" width="15" height="12" />
+            <!-- Chấm nhỏ trong hộp vuông -->
+            <circle class="icon-part thin" cx="22.5" cy="6" r="1" />
+
+            <!-- Thân chiếc giày/ủng -->
+            <!-- Path vẽ từ gót -> cổ -> mũi giày -> đế giày -->
+            <path class="icon-part thin" d="M 38 40 L 38 15 L 22 15 L 22 25 Q 15 25 2 35 L 2 40 Z" />
+            <!-- Kệ đỡ bên dưới giày -->
+            <line class="icon-part thin" x1="-2" y1="45" x2="44" y2="45" />
+          </g>
+        </g>
+      </svg>
+
+      <!-- Phần Chữ -->
+      <div class="logo-text">
+        <h1 class="main-title">Giày dép Hương Nhớ</h1>
+        <p class="sub-title">ÊM ÁI VÀ QUYẾN RŨ</p>
+      </div>
+    </div>
   </div>
 
   <!-- Header -->
@@ -72,6 +137,7 @@
       <nav class="nav">
         <a href="/">Trang Chủ</a>
         <a href="/products.html">Sản Phẩm</a>
+        <a href="/blog.html">Bảng Tin</a>
         <a href="#" onclick="showAbout()">Giới Thiệu</a>
         <a href="#" onclick="showContact()">Liên Hệ</a>
       </nav>
@@ -100,6 +166,31 @@
     <a href="/products.html" class="hero-btn">Khám Phá Ngay</a>
   </section>
 
+  <!-- Event Campaign -->
+  <section class="event-campaign" id="event-campaign" data-theme="love">
+    <div class="container event-campaign-inner">
+      <div class="event-campaign-copy">
+        <div class="event-campaign-tag" id="event-tag">STEP OF LOVE</div>
+        <h2 class="event-campaign-title" id="event-title">Giày đôi tình thắm</h2>
+        <p class="event-campaign-subtitle" id="event-subtitle">Ưu đãi theo cặp: mua càng vui, giảm càng sâu.</p>
+        <div class="event-campaign-benefits" id="event-benefits"></div>
+        <div class="event-campaign-actions">
+          <a class="btn btn-primary" id="event-cta" href="/products.html">Mua ngay</a>
+          <button class="btn btn-secondary" id="open-lucky-spin-inline">
+            <i class="fas fa-gift"></i> Quay may mắn
+          </button>
+        </div>
+      </div>
+      <div class="event-campaign-visual">
+        <img id="event-img-left" src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=700"
+          alt="Giày khuyến mãi trái">
+        <img id="event-img-right" src="https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=700"
+          alt="Giày khuyến mãi phải">
+      </div>
+    </div>
+    <div class="event-campaign-dots" id="event-dots"></div>
+  </section>
+
   <!-- Flash Sale Section -->
   <section class="flash-sale-section" id="flash-sale">
     <div class="container">
@@ -123,14 +214,31 @@
   </section>
 
   <!-- Featured Products -->
-  </div>
-
-  <div class="products-grid" id="products-grid">
-    <!-- Products will be loaded here -->
-    <div class="loading">
-      <div class="spinner"></div>
+  <section class="featured-products container">
+    <div class="section-title">
+      <h2>Sản Phẩm Nổi Bật</h2>
+      <p>Những mẫu thiết kế mới nhất và được yêu thích nhất</p>
     </div>
-  </div>
+    <div class="products-grid" id="products-grid">
+      <!-- Products will be loaded here -->
+      <div class="loading">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Map -->
+  <section class="map-section" id="store-map">
+    <div class="container">
+      <div class="section-title">
+        <h2>Địa Chỉ Cửa Hàng</h2>
+        <p>Ghé thăm Giày Dép Hương Nhớ tại Khánh Hòa</p>
+      </div>
+      <div class="map-embed" role="presentation" aria-label="Bản đồ Google Maps đến Giày Dép Hương Nhớ">
+        <iframe src="https://www.google.com/maps?q=11.5928998,108.9522342&z=16&output=embed" allowfullscreen=""
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
   </section>
 
   <!-- Footer -->
@@ -155,9 +263,11 @@
       </div>
       <div class="footer-section">
         <h3>Theo Dõi</h3>
-        <p><a href="#"><i class="fab fa-facebook"></i> Facebook</a></p>
+        <p><a href="https://www.facebook.com/people/Gi%C3%A0y-D%C3%A9p-H%C6%B0%C6%A1ng-Nh%E1%BB%9B/61562115007227/#"
+            target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i> Facebook</a></p>
         <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
-        <p><a href="#"><i class="fab fa-tiktok"></i> TikTok</a></p>
+        <p><a href="https://www.tiktok.com/@nhutcoder0902" target="_blank" rel="noopener noreferrer"><i
+              class="fab fa-tiktok"></i> TikTok</a></p>
       </div>
     </div>
     <div class="footer-bottom">
@@ -188,28 +298,95 @@
   <!-- Cart Overlay -->
   <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
 
+  <!-- Lucky Spin -->
+  <button class="lucky-spin-fab" id="open-lucky-spin" aria-label="Mở vòng quay may mắn">
+    <i class="fas fa-gift"></i> Vòng quay
+  </button>
+  <div class="lucky-spin-overlay" id="lucky-spin-overlay">
+    <div class="lucky-spin-modal" role="dialog" aria-modal="true" aria-labelledby="lucky-spin-title">
+      <button class="lucky-spin-close" id="lucky-spin-close" aria-label="Đóng">&times;</button>
+      <h3 id="lucky-spin-title">Vòng Quay May Mắn 2026</h3>
+      <p class="lucky-spin-desc">Mỗi khách hàng được quay 1 lần mỗi ngày để nhận voucher.</p>
+      <div class="lucky-wheel-wrap">
+        <div class="lucky-wheel-pointer"></div>
+        <div class="lucky-wheel" id="lucky-wheel"></div>
+        <div class="lucky-wheel-labels" id="lucky-wheel-labels"></div>
+        <button class="lucky-spin-center" id="lucky-spin-btn">QUAY</button>
+      </div>
+      <p class="lucky-spin-note" id="lucky-spin-note">Nhấn QUAY để thử vận may của bạn.</p>
+      <div class="lucky-spin-result" id="lucky-spin-result"></div>
+    </div>
+  </div>
+
+  <div class="promo-popup-overlay" id="promo-popup-overlay">
+    <div class="promo-popup-modal" role="dialog" aria-modal="true" aria-labelledby="promo-popup-title">
+      <button class="promo-popup-close" id="promo-popup-close" aria-label="Đóng">&times;</button>
+      <img id="promo-popup-image" src="" alt="Banner quảng cáo">
+      <div class="promo-popup-content">
+        <h3 id="promo-popup-title"></h3>
+        <p id="promo-popup-subtitle"></p>
+        <a id="promo-popup-cta" class="btn btn-primary" href="/products.html">Xem ngay</a>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <script src="js/api.js?v=2"></script>
+  <script src="js/api.js?v=4"></script>
   <script src="js/auth.js?v=2"></script>
   <script src="js/cart.js?v=2"></script>
-  <script src="js/main.js?v=2"></script>
-  <script src="js/push-client.js?v=2"></script>
+  <script src="js/main.js?v=8"></script>
+  <script src="js/push-client.js?v=4"></script>
   <script>
-    // Failsafe: Hide loader after max 3 seconds even if something fails
+    document.addEventListener('DOMContentLoaded', initPolicyNotice);
+  </script>
+  <script>
+    /**
+     * Kỹ thuật SVG Animation logic
+     */
+    document.addEventListener("DOMContentLoaded", () => {
+      const paths = document.querySelectorAll('.icon-part');
+
+      paths.forEach(path => {
+        let length = 0;
+
+        if (path.tagName.toLowerCase() === 'path') {
+          length = path.getTotalLength();
+        } else if (path.tagName.toLowerCase() === 'circle') {
+          const r = path.getAttribute('r');
+          length = 2 * Math.PI * r;
+        } else if (path.tagName.toLowerCase() === 'line') {
+          const x1 = path.getAttribute('x1');
+          const y1 = path.getAttribute('y1');
+          const x2 = path.getAttribute('x2');
+          const y2 = path.getAttribute('y2');
+          length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        } else if (path.tagName.toLowerCase() === 'rect') {
+          const w = path.getAttribute('width');
+          const h = path.getAttribute('height');
+          length = (w * 2) + (h * 2);
+        }
+
+        const totalLength = length + 5;
+        path.style.setProperty('--path-length', totalLength);
+      });
+    });
+  </script>
+  <script>
+    // Show loader for at least 3 seconds (3000ms) to let the animation play
     window.addEventListener('load', () => {
       setTimeout(() => {
         const loader = document.getElementById('page-loader');
         if (loader) loader.style.display = 'none';
-      }, 500);
+      }, 3000);
     });
 
-    // Backup failsafe
+    // Backup failsafe (4.5 seconds)
     setTimeout(() => {
       const loader = document.getElementById('page-loader');
       if (loader) loader.style.display = 'none';
-    }, 3000);
+    }, 4500);
   </script>
 
   <!--Start of Tawk.to Script-->

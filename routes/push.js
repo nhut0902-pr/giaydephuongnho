@@ -11,7 +11,7 @@ const VAPID_CONFIGURED = process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVA
 // Configure VAPID only if keys are available
 if (VAPID_CONFIGURED) {
     webpush.setVapidDetails(
-        process.env.VAPID_SUBJECT || 'mailto:admin@giaydephuongnho.com',
+        process.env.VAPID_SUBJECT || 'mailto:admin@giaydephuongnho.vercel.app',
         process.env.VAPID_PUBLIC_KEY,
         process.env.VAPID_PRIVATE_KEY
     );
@@ -22,6 +22,9 @@ if (VAPID_CONFIGURED) {
 
 // Get VAPID public key (for client)
 router.get('/vapid-public-key', (req, res) => {
+    if (!process.env.VAPID_PUBLIC_KEY) {
+        return res.status(503).json({ error: 'Push notifications not configured' });
+    }
     res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
 

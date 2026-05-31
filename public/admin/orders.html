@@ -2,6 +2,9 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Đơn Hàng - Admin</title>
@@ -26,6 +29,8 @@
                 <a href="/admin/products.html"><i class="fas fa-box"></i> Sản Phẩm</a>
                 <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
                 <a href="/admin/flash-sale.html"><i class="fas fa-bolt"></i> Flash Sale</a>
+                <a href="/admin/marketing.html"><i class="fas fa-bullhorn"></i> Marketing Event</a>
+                <a href="/admin/blog.html"><i class="fas fa-newspaper"></i> Blog / Bảng Tin</a>
                 <a href="/admin/users.html"><i class="fas fa-users"></i> Người Dùng</a>
                 <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
                 <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
@@ -83,14 +88,14 @@
 
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="../js/api.js"></script>
+    <script src="../js/api.js?v=4"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/main.js"></script>
     <script>
         const statusLabels = { pending: 'Chờ xác nhận', processing: 'Đang xử lý', shipped: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
 
         async function loadOrders() {
-            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+            if (!(await requireAdmin())) return;
 
             const status = document.getElementById('status-filter').value;
             const tbody = document.getElementById('orders-tbody');
@@ -103,7 +108,11 @@
             <td>${o.User?.name || 'N/A'}</td>
             <td>${o.shippingPhone || o.User?.phone || ''}</td>
             <td>${formatPrice(o.total)}</td>
-            <td><span class="badge badge-${o.status}">${statusLabels[o.status]}</span></td>
+            <td><span class="badge badge-${o.status}">${statusLabels[o.status]}</span>
+                ${o.returnStatus === 'requested' ? '<br><span style="color:#d97706;font-size:0.8rem;font-weight:700">Đợi đổi trả</span>' : ''}
+                ${o.returnStatus === 'approved' ? '<br><span style="color:#059669;font-size:0.8rem;font-weight:700">Đã duyệt ĐT</span>' : ''}
+                ${o.returnStatus === 'rejected' ? '<br><span style="color:#dc2626;font-size:0.8rem;font-weight:700">Từ chối ĐT</span>' : ''}
+            </td>
             <td>${formatDate(o.createdAt)}</td>
             <td>
               <button class="btn btn-secondary" style="padding:0.25rem 0.5rem" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i></button>
@@ -143,7 +152,26 @@
             </div>
           `).join('')}
           ${order.discount > 0 ? `<p style="margin-top:1rem"><strong>Giảm giá:</strong> -${formatPrice(order.discount)}</p>` : ''}
-          <p style="font-size:1.2rem;font-weight:700;margin-top:1rem"><strong>Tổng:</strong> ${formatPrice(order.total)}</p>
+          <p style="font-size:1.2rem;font-weight:700;margin-top:1rem;margin-bottom:1rem"><strong>Tổng:</strong> ${formatPrice(order.total)}</p>
+          
+          ${order.returnStatus !== 'none' ? `
+            <div style="background:#f9fafb;border-radius:8px;padding:1rem;margin-top:1.5rem;border:1px solid #e5e7eb">
+                <h4 style="margin:0 0 0.5rem;color:#1A1135"><i class="fas fa-exchange-alt"></i> Thông tin Đổi Trả</h4>
+                <p style="margin:0 0 0.5rem"><strong>Trạng thái:</strong> 
+                    ${order.returnStatus === 'requested' ? '<span style="color:#d97706;font-weight:600">Đang chờ duyệt</span>' : ''}
+                    ${order.returnStatus === 'approved' ? '<span style="color:#059669;font-weight:600">Đã chấp nhận</span>' : ''}
+                    ${order.returnStatus === 'rejected' ? '<span style="color:#dc2626;font-weight:600">Bị từ chối</span>' : ''}
+                </p>
+                <p style="margin:0"><strong>Lý do của khách:</strong> ${order.returnReason || '(Không có)'}</p>
+                
+                ${order.returnStatus === 'requested' ? `
+                    <div style="margin-top:1rem;display:flex;gap:0.75rem">
+                        <button class="btn btn-primary" style="background:#10b981;border-color:#10b981" onclick="handleReturnAction(${order.id}, 'approve')"><i class="fas fa-check"></i> Chấp nhận</button>
+                        <button class="btn btn-danger" onclick="handleReturnAction(${order.id}, 'reject')"><i class="fas fa-times"></i> Từ chối</button>
+                    </div>
+                ` : ''}
+            </div>
+          ` : ''}
         `;
                 document.getElementById('order-modal').classList.add('active');
                 await adminAPI.markAsRead(id);
@@ -163,6 +191,30 @@
             }
         }
 
+        async function handleReturnAction(id, action) {
+            const isApprove = action === 'approve';
+            let confirmMsg = isApprove
+                ? 'Chấp nhận báo cho khách đổi trả? Email và thông báo Push sẽ được gửi hẹn khách nhắn Zalo.'
+                : 'Từ chối yêu cầu đổi trả này? Sẽ có email và Push báo từ chối gửi cho khách.';
+
+            if (!confirm(confirmMsg)) return;
+
+            let zaloLink = '0902'; // default admin zalo
+            if (isApprove) {
+                const z = prompt('Nhập số điện thoại/link Zalo để khách hàng nhắn tin (ex: 0902xxxx):', '0902');
+                if (z !== null) zaloLink = z;
+            }
+
+            try {
+                await ordersAPI.adminReturnAction(id, action, zaloLink);
+                showToast(isApprove ? 'Đã duyệt yêu cầu đổi trả' : 'Đã từ chối đổi trả', 'success');
+                viewOrder(id); // reload modal content
+                loadOrders();  // reload table list
+            } catch (error) {
+                showToast(error.message || 'Lỗi khi xử lý đổi trả', 'error');
+            }
+        }
+
         function closeModal() { document.getElementById('order-modal').classList.remove('active'); }
 
         document.addEventListener('DOMContentLoaded', loadOrders);
@@ -171,6 +223,7 @@
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
     </script>
+    <script src="/js/push-client.js?v=4"></script>
 </body>
 
 </html>

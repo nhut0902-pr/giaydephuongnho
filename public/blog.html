@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Tin & Blog - Giày Dép Hương Nhớ</title>
+    <meta name="description" content="Tin tức, xu hướng thời trang và mẹo chọn giày dép từ Giày Dép Hương Nhớ.">
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg">
+    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .blog-hero {
+            background: linear-gradient(135deg, #A948C8, #4B61B5);
+            padding: 3rem 1rem;
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .blog-hero h1 {
+            font-size: 2rem;
+            margin: 0 0 0.5rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .blog-hero p {
+            opacity: 0.8;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .blog-filters {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+
+        .blog-filters .filter-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            border: 1px solid #e5e7eb;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .blog-filters .filter-btn.active,
+        .blog-filters .filter-btn:hover {
+            background: #A948C8;
+            color: white;
+            border-color: #A948C8;
+        }
+
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .blog-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .blog-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .blog-card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .blog-card-body {
+            padding: 1.2rem;
+        }
+
+        .blog-card-category {
+            display: inline-block;
+            background: #f3e8ff;
+            color: #A948C8;
+            padding: 0.2rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .blog-card-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1A1135;
+            margin: 0 0 0.5rem;
+            line-height: 1.4;
+        }
+
+        .blog-card-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .blog-card-title a:hover {
+            color: #A948C8;
+        }
+
+        .blog-card-excerpt {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .blog-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .blog-card-meta i {
+            margin-right: 0.3rem;
+        }
+
+        .blog-empty {
+            text-align: center;
+            padding: 4rem 1rem;
+            color: #aaa;
+        }
+
+        .blog-empty i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .blog-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .blog-pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .blog-pagination button.active {
+            background: #A948C8;
+            color: white;
+            border-color: #A948C8;
+        }
+
+        .blog-pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 600px) {
+            .blog-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .blog-hero h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo"><img src="images/logo.jpg" alt="Giày Dép Hương Nhớ"></a>
+            <nav class="nav"><a href="/">Trang Chủ</a><a href="/products.html">Sản Phẩm</a><a href="/blog.html">Bảng
+                    Tin</a></nav>
+            <div class="header-actions">
+                <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-bag"></i><span
+                        class="cart-count" id="cart-count">0</span></button>
+                <div id="auth-section"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="blog-hero">
+        <h1><i class="fas fa-newspaper"></i> Bảng Tin & Blog</h1>
+        <p>Tin tức, xu hướng và mẹo thời trang giày dép</p>
+    </div>
+
+    <div class="blog-filters" id="blog-filters">
+        <button class="filter-btn active" onclick="filterBlog('')">Tất cả</button>
+    </div>
+
+    <div class="blog-grid" id="blog-grid">
+        <div class="blog-empty"><i class="fas fa-spinner fa-spin"></i>Đang tải...</div>
+    </div>
+
+    <div class="blog-pagination" id="blog-pagination"></div>
+
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fas fa-shopping-bag"></i> Giỏ Hàng</h3><button class="modal-close" onclick="toggleCart()"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cart-items"></div>
+        <div class="cart-footer">
+            <div class="cart-total"><span>Tổng:</span><span id="cart-total">0đ</span></div><a href="/cart.html"
+                class="btn btn-primary btn-block">Xem Giỏ Hàng</a>
+        </div>
+    </div>
+    <div class="modal-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="js/api.js?v=4"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/cart.js?v=2"></script>
+    <script src="js/main.js?v=8"></script>
+    <script>document.addEventListener('DOMContentLoaded', initPolicyNotice);</script>
+    <script>
+        let currentCategory = '';
+        let currentPage = 1;
+
+        async function loadBlogCategories() {
+            try {
+                const categories = await blogAPI.getCategories();
+                const container = document.getElementById('blog-filters');
+                container.innerHTML = '<button class="filter-btn active" onclick="filterBlog(\'\')">Tất cả</button>' +
+                    categories.map(c => `<button class="filter-btn" onclick="filterBlog('${c}')">${c}</button>`).join('');
+            } catch (e) { /* ignore */ }
+        }
+
+        function filterBlog(category) {
+            currentCategory = category;
+            currentPage = 1;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            loadBlogPosts();
+        }
+
+        async function loadBlogPosts() {
+            const grid = document.getElementById('blog-grid');
+            grid.innerHTML = '<div class="blog-empty"><i class="fas fa-spinner fa-spin"></i>Đang tải...</div>';
+
+            try {
+                const params = { page: currentPage, limit: 12 };
+                if (currentCategory) params.category = currentCategory;
+
+                const data = await blogAPI.getAll(params);
+
+                if (!data.posts || data.posts.length === 0) {
+                    grid.innerHTML = '<div class="blog-empty"><i class="fas fa-newspaper"></i>Chưa có bài viết nào</div>';
+                    document.getElementById('blog-pagination').innerHTML = '';
+                    return;
+                }
+
+                grid.innerHTML = data.posts.map(post => `
+                    <div class="blog-card">
+                        ${post.thumbnail ? `<a href="/blog-detail.html?slug=${post.slug}"><img class="blog-card-img" src="${post.thumbnail}" alt="${post.title}" loading="lazy"></a>` : ''}
+                        <div class="blog-card-body">
+                            <span class="blog-card-category">${post.category || 'Tin tức'}</span>
+                            <h3 class="blog-card-title"><a href="/blog-detail.html?slug=${post.slug}">${post.title}</a></h3>
+                            <p class="blog-card-excerpt">${post.excerpt || ''}</p>
+                            <div class="blog-card-meta">
+                                <span><i class="fas fa-user"></i>${post.authorName}</span>
+                                <span><i class="fas fa-eye"></i>${post.views || 0} lượt xem</span>
+                                <span><i class="fas fa-clock"></i>${new Date(post.createdAt).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Pagination
+                const pagDiv = document.getElementById('blog-pagination');
+                if (data.pages > 1) {
+                    pagDiv.innerHTML = Array.from({ length: data.pages }, (_, i) => i + 1)
+                        .map(p => `<button class="${p === data.currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`)
+                        .join('');
+                } else {
+                    pagDiv.innerHTML = '';
+                }
+            } catch (error) {
+                grid.innerHTML = '<div class="blog-empty"><i class="fas fa-exclamation-triangle"></i>Lỗi tải bài viết</div>';
+            }
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadBlogPosts();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBlogCategories();
+            loadBlogPosts();
+        });
+    </script>
+    <script src="/js/push-client.js?v=5"></script>
+</body>
+
+</html>

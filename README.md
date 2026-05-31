@@ -82,14 +82,19 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 IMAGEKIT_URL=your_imagekit_url
 IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
 IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-DATABASE_URL=your_neon_database_url
+APP_URL=https://your-site.netlify.app
+GOOGLE_CALLBACK_URL=https://your-site.netlify.app/api/auth/google/callback
+TURSO_DATABASE_URL=libsql://your-database-name.turso.io
+TURSO_AUTH_TOKEN=your_turso_auth_token
 ```
 
 ### **4. Khởi tạo database**
 ```bash
-# Truy cập http://localhost:3000/init-db để sync database
 npm start
 ```
+
+Schema sẽ được bootstrap tự động khi app khởi động lần đầu trên Turso. Prisma client cũng được generate tự động ở bước `npm install` thông qua script `postinstall`.
+Các bảng của ứng dụng được tạo với prefix `GDN` để tránh va chạm nếu Turso database đang được dùng chung với schema khác.
 
 ### **5. Migration (nếu có dữ liệu cũ)**
 ```bash
@@ -108,7 +113,7 @@ npm run dev
 
 ## 📱 Demo
 
-- **Website**: [https://giaydephuongnho.vercel.app](https://giaydephuongnho.vercel.app)
+- **Website**: [https://giaydephuongnho.netlify.app](https://giaydephuongnho.netlify.app)
 - **Admin Panel**: `/admin/` (cần đăng nhập admin)
 - **Test Product**: `/product-detail.html?id=16`
 

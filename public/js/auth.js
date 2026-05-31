@@ -65,9 +65,16 @@ document.addEventListener('click', (e) => {
 });
 
 // Login
-async function login(email, password) {
+async function login(email, password, recaptchaToken) {
     try {
-        const data = await authAPI.login(email, password);
+        const data = await authAPI.login(email, password, recaptchaToken);
+
+        // If OTP verification is required, redirect to OTP page
+        if (data.requireOTP) {
+            showToast('Vui lòng xác thực email!', 'success');
+            window.location.href = `/verify-otp.html?email=${encodeURIComponent(data.email || email)}`;
+            return data;
+        }
 
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -101,6 +108,13 @@ async function login(email, password) {
 async function register(data) {
     try {
         const result = await authAPI.register(data);
+
+        // If OTP verification is required, redirect to OTP page
+        if (result.requireOTP) {
+            showToast('Đăng ký thành công! Vui lòng xác thực email.', 'success');
+            window.location.href = `/verify-otp.html?email=${encodeURIComponent(result.email || data.email)}`;
+            return result;
+        }
 
         localStorage.setItem('token', result.token);
         localStorage.setItem('user', JSON.stringify(result.user));
@@ -160,13 +174,36 @@ function requireLogin(redirectPath = null) {
     return true;
 }
 
-// Require admin
-function requireAdmin() {
+// Require admin - robust version with server check
+async function requireAdmin() {
+    // 1. Quick check
     if (!isAdmin()) {
-        window.location.href = '/';
+        window.location.href = '/login.html';
         return false;
     }
-    return true;
+
+    // 2. Hide content briefly while verifying with server
+    document.body.style.opacity = '0';
+
+    try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await response.json();
+
+        if (!response.ok || data.user.role !== 'admin') {
+            throw new Error('Unauthorized');
+        }
+
+        // Success, show body
+        document.body.style.opacity = '1';
+        return true;
+    } catch (e) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+        return false;
+    }
 }
 
 // Sync local cart to server after login

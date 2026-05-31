@@ -2,6 +2,9 @@
 <html lang="vi">
 
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Sản Phẩm - Admin</title>
@@ -26,6 +29,8 @@
                 <a href="/admin/products.html" class="active"><i class="fas fa-box"></i> Sản Phẩm</a>
                 <a href="/admin/discounts.html"><i class="fas fa-tags"></i> Mã Giảm Giá</a>
                 <a href="/admin/flash-sale.html"><i class="fas fa-bolt"></i> Flash Sale</a>
+                <a href="/admin/marketing.html"><i class="fas fa-bullhorn"></i> Marketing Event</a>
+                <a href="/admin/blog.html"><i class="fas fa-newspaper"></i> Blog / Bảng Tin</a>
                 <a href="/admin/users.html"><i class="fas fa-users"></i> Người Dùng</a>
                 <a href="/"><i class="fas fa-store"></i> Xem Shop</a>
                 <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a>
@@ -104,6 +109,14 @@
                         <option value="loafer">Giày Lười</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Sizes (cách nhau bằng dấu phẩy)</label>
+                    <input type="text" id="p-sizes" placeholder="VD: 39, 40, 41, 42">
+                </div>
+                <div class="form-group">
+                    <label>Colors (cách nhau bằng dấu phẩy)</label>
+                    <input type="text" id="p-colors" placeholder="VD: Đỏ, Xanh, Đen">
+                </div>
                 <div class="form-group"><label>Số lượng kho</label><input type="number" id="p-stock" min="0" value="0">
                 </div>
 
@@ -111,8 +124,10 @@
                 <div class="form-group">
                     <label>Thư viện ảnh sản phẩm</label>
                     <div style="margin-bottom:1rem">
-                        <input type="file" id="p-images-files" accept="image/*" multiple style="display:none" onchange="uploadMultipleImages(this)">
-                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('p-images-files').click()" id="upload-multiple-btn">
+                        <input type="file" id="p-images-files" accept="image/*" multiple style="display:none"
+                            onchange="uploadMultipleImages(this)">
+                        <button type="button" class="btn btn-secondary"
+                            onclick="document.getElementById('p-images-files').click()" id="upload-multiple-btn">
                             <i class="fas fa-images"></i> Tải nhiều ảnh
                         </button>
                         <span style="font-size:0.8rem;color:var(--gray);margin-left:1rem">Tối đa 10 ảnh</span>
@@ -129,12 +144,12 @@
 
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="../js/api.js"></script>
+    <script src="../js/api.js?v=4"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/main.js"></script>
     <script>
         async function loadProducts() {
-            if (!isLoggedIn() || !isAdmin()) { window.location.href = '/login.html'; return; }
+            if (!(await requireAdmin())) return;
 
             try {
                 const products = await productsAPI.getAll();
@@ -166,6 +181,8 @@
             document.getElementById('modal-title').textContent = 'Thêm Sản Phẩm';
             document.getElementById('product-form').reset();
             document.getElementById('product-id').value = '';
+            document.getElementById('p-sizes').value = '';
+            document.getElementById('p-colors').value = '';
             productImages = []; // Reset images
             renderImagesGallery();
             document.getElementById('product-modal').classList.add('active');
@@ -182,13 +199,15 @@
                 document.getElementById('p-image').value = p.image || '';
                 document.getElementById('p-category').value = p.category || '';
                 document.getElementById('p-stock').value = p.stock;
-                
+                document.getElementById('p-sizes').value = (p.sizes || []).join(', ');
+                document.getElementById('p-colors').value = (p.colors || []).join(', ');
+
                 // Load existing images
                 productImages = p.images || [];
                 renderImagesGallery();
-                
+
                 document.getElementById('product-modal').classList.add('active');
-            } catch (error) { showToast('Lỗi', 'error'); }
+            } catch (error) { showToast('Lỗi: ' + (error.message || 'Không tải được sản phẩm'), 'error'); console.error('Edit product error:', error); }
         }
 
         async function saveProduct(e) {
@@ -201,7 +220,9 @@
                 image: document.getElementById('p-image').value,
                 images: productImages.map(img => ({ url: img.url, fileId: img.fileId })),
                 category: document.getElementById('p-category').value,
-                stock: parseInt(document.getElementById('p-stock').value) || 0
+                stock: parseInt(document.getElementById('p-stock').value) || 0,
+                sizes: document.getElementById('p-sizes').value.split(',').map(s => s.trim()).filter(Boolean),
+                colors: document.getElementById('p-colors').value.split(',').map(s => s.trim()).filter(Boolean)
             };
 
             try {
@@ -210,7 +231,7 @@
                 showToast('Lưu thành công', 'success');
                 closeModal();
                 loadProducts();
-            } catch (error) { showToast(error.message, 'error'); }
+            } catch (error) { showToast('Lỗi lưu SP: ' + (error.message || 'Vui lòng thử lại'), 'error'); console.error('Save product error:', error); }
         }
 
         async function deleteProduct(id) {
@@ -333,7 +354,7 @@
             }
         }
 
-        function closeModal() { 
+        function closeModal() {
             document.getElementById('product-modal').classList.remove('active');
             productImages = []; // Reset images when closing modal
         }
@@ -345,6 +366,7 @@
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
     </script>
+    <script src="/js/push-client.js?v=4"></script>
 </body>
 
 </html>

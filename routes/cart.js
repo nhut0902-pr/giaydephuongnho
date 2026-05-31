@@ -22,7 +22,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // Add to cart
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { productId, quantity = 1 } = req.body;
+        const { productId, quantity = 1, size, color } = req.body;
 
         // Check if product exists
         const product = await Product.findByPk(productId);
@@ -30,9 +30,14 @@ router.post('/', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Sản phẩm không tồn tại' });
         }
 
-        // Check if already in cart
+        // Check if already in cart (same product + same size + same color)
         let cartItem = await Cart.findOne({
-            where: { UserId: req.user.id, ProductId: productId }
+            where: {
+                UserId: req.user.id,
+                ProductId: productId,
+                size: size || null,
+                color: color || null
+            }
         });
 
         if (cartItem) {
@@ -43,7 +48,9 @@ router.post('/', authenticateToken, async (req, res) => {
             cartItem = await Cart.create({
                 UserId: req.user.id,
                 ProductId: productId,
-                quantity
+                quantity,
+                size,
+                color
             });
         }
 

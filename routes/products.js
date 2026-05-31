@@ -3,6 +3,7 @@ const { Product, DiscountCode } = require('../models');
 const { authenticateToken, isAdmin, optionalAuth } = require('../middleware/auth');
 const { Op } = require('sequelize');
 const pushRoutes = require('./push');
+const { sendNewProductEmail } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -116,8 +117,11 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
             description,
             price,
             image,
+            images: req.body.images || [],
             category,
-            stock
+            stock,
+            sizes: req.body.sizes,
+            colors: req.body.colors
         });
 
         // Send push notification to all customers about new product
@@ -130,6 +134,11 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
                 data: { url: `/product-detail.html?id=${product.id}`, productId: product.id }
             });
         } catch (e) { console.log('Push notification failed:', e); }
+
+        // Send email to all customers
+        try {
+            await sendNewProductEmail(name, image, product.id);
+        } catch (e) { console.log('New product email failed:', e); }
 
         res.status(201).json(product);
     } catch (error) {
@@ -154,8 +163,11 @@ router.put('/:id', authenticateToken, isAdmin, async (req, res) => {
             description,
             price,
             image,
+            images: req.body.images || [],
             category,
-            stock
+            stock,
+            sizes: req.body.sizes,
+            colors: req.body.colors
         });
 
         res.json(product);
