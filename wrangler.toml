@@ -1,25 +1,14 @@
-name = "giaydephuongnho-api"
-main = "worker.js"
-compatibility_date = "2024-09-23"
+"$schema" = "./node_modules/wrangler/config-schema.json"
+
+name = "giaydephuongnho"
+pages_build_output_dir = "public"
+compatibility_date = "2026-05-31"
 compatibility_flags = ["nodejs_compat"]
 
-# Serve static files from public/ directory
-[assets]
-directory = "public"
+[build]
+command = "npm ci && npm run db:generate"
 
 [vars]
 PORT = "3000"
-JWT_SECRET = "CHANGE_ME"
-SESSION_SECRET = "CHANGE_ME"
-GOOGLE_CLIENT_ID = "CHANGE_ME"
-GOOGLE_CLIENT_SECRET = "CHANGE_ME"
-IMAGEKIT_URL = "CHANGE_ME"
-IMAGEKIT_PUBLIC_KEY = "CHANGE_ME"
-IMAGEKIT_PRIVATE_KEY = "CHANGE_ME"
-GMAIL_USER = "CHANGE_ME"
-GMAIL_APP_PASSWORD = "CHANGE_ME"
-TURNSTILE_SECRET = "CHANGE_ME"
-TURSO_DATABASE_URL = "CHANGE_ME"
-TURSO_AUTH_TOKEN = "CHANGE_ME"
-APP_URL = "https://giaydephuongnho-api.nhutcoder0902.workers.dev"
-GOOGLE_CALLBACK_URL = "https://giaydephuongnho-api.nhutcoder0902.workers.dev/api/auth/google/callback"
+APP_URL = "https://giaydephuongnho.pages.dev"
+GOOGLE_CALLBACK_URL = "https://giaydephuongnho.pages.dev/api/auth/google/callback"
