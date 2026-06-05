@@ -6,14 +6,18 @@ window.API_URL = API_URL;
 // API Helper Functions
 async function api(endpoint, options = {}) {
     const token = localStorage.getItem('token');
+    const hasBody = options.body !== undefined && options.body !== null;
 
     const config = {
         headers: {
-            'Content-Type': 'application/json',
             ...(token && { 'Authorization': `Bearer ${token}` })
         },
         ...options
     };
+
+    if (hasBody) {
+        config.headers['Content-Type'] = 'application/json';
+    }
 
     const response = await fetch(`${API_URL}${endpoint}`, config);
     const contentType = (response.headers.get('content-type') || '').toLowerCase();
