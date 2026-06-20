@@ -372,62 +372,6 @@ async function bootstrapApp() {
         console.log('Admin user auto-verified');
       }
 
-      // Create sample products if none exist
-      const { Product } = require('./models');
-      const productCount = await Product.count();
-      if (productCount === 0) {
-        await Product.bulkCreate([
-          {
-            name: 'Giày Sneaker Trắng Classic',
-            description: 'Giày sneaker trắng phong cách cổ điển, phù hợp với mọi trang phục.',
-            price: 850000,
-            image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400',
-            category: 'sneaker',
-            stock: 50
-          },
-          {
-            name: 'Dép Sandal Nữ Thời Trang',
-            description: 'Dép sandal nữ cao cấp, thiết kế thanh lịch và thoải mái.',
-            price: 450000,
-            image: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400',
-            category: 'sandal',
-            stock: 30
-          },
-          {
-            name: 'Giày Thể Thao Running Pro',
-            description: 'Giày chạy bộ chuyên nghiệp với đệm êm và nhẹ.',
-            price: 1250000,
-            image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
-            category: 'sport',
-            stock: 25
-          },
-          {
-            name: 'Giày Cao Gót Đen Sang Trọng',
-            description: 'Giày cao gót đen thanh lịch cho các buổi tiệc và sự kiện.',
-            price: 680000,
-            image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400',
-            category: 'heels',
-            stock: 20
-          },
-          {
-            name: 'Giày Lười Nam Công Sở',
-            description: 'Giày lười nam da thật, phù hợp đi làm và dự tiệc.',
-            price: 920000,
-            image: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400',
-            category: 'loafer',
-            stock: 35
-          },
-          {
-            name: 'Dép Quai Ngang Unisex',
-            description: 'Dép quai ngang thoải mái, phù hợp cho cả nam và nữ.',
-            price: 280000,
-            image: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400',
-            category: 'sandal',
-            stock: 60
-          }
-        ]);
-        console.log('Sample products created');
-      }
     })().catch(err => {
       bootstrapPromise = null;
       throw err;
