@@ -140,9 +140,6 @@ app.use('/api/flash-sale', flashSaleRoutes);
 app.use('/api/marketing', marketingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/blog', blogRoutes);
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found' });
-});
 
 // Dynamic Sitemap.xml for SEO
 app.get('/sitemap.xml', async (req, res) => {
@@ -234,59 +231,114 @@ app.get('/product-feed.xml', async (req, res) => {
 });
 
 // Google Auth Routes
-app.get('/api/auth/google', (req, res, next) => {
-  console.log('[Google OAuth] Starting authentication flow...');
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
+
+app.get('/api/auth/google', (req, res) => {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    return res.redirect('/login.html?error=' + encodeURIComponent('Thiếu cấu hình Google OAuth.'));
+  }
+
+  const authUrl = new URL(GOOGLE_AUTH_URL);
+  authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
+  authUrl.searchParams.set('redirect_uri', CALLBACK_URL);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', 'openid email profile');
+  authUrl.searchParams.set('access_type', 'offline');
+  authUrl.searchParams.set('prompt', 'consent');
+
+  console.log('[Google OAuth] Redirecting to Google auth URL');
+  return res.redirect(authUrl.toString());
 });
 
-app.get('/api/auth/google/callback', (req, res, next) => {
-  passport.authenticate('google', (err, user, info) => {
-    if (err) {
-      console.error('[Google OAuth Callback] Authentication error:', err.message);
-      return res.redirect('/login.html?error=' + encodeURIComponent('Đăng nhập Google thất bại: ' + err.message));
+app.get('/api/auth/google/callback', async (req, res) => {
+  try {
+    const { code, error } = req.query;
+    if (error) {
+      console.error('[Google OAuth Callback] Google returned error:', error);
+      return res.redirect('/login.html?error=' + encodeURIComponent('Google từ chối đăng nhập.'));
     }
-    if (!user) {
-      console.error('[Google OAuth Callback] No user returned. Info:', info);
+    if (!code) {
+      return res.redirect('/login.html?error=' + encodeURIComponent('Thiếu mã xác thực từ Google.'));
+    }
+
+    const tokenResp = await fetch(GOOGLE_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code: String(code),
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: CALLBACK_URL,
+        grant_type: 'authorization_code'
+      })
+    });
+
+    const tokenData = await tokenResp.json();
+    if (!tokenResp.ok) {
+      console.error('[Google OAuth Callback] Token exchange failed:', tokenData);
       return res.redirect('/login.html?error=' + encodeURIComponent('Đăng nhập Google thất bại. Vui lòng thử lại.'));
     }
-    req.logIn(user, async (loginErr) => {
-      if (loginErr) {
-        console.error('[Google OAuth Callback] Login error:', loginErr);
-        return res.redirect('/login.html?error=' + encodeURIComponent('Lỗi đăng nhập. Vui lòng thử lại.'));
-      }
-      // Success - continue with existing logic
-      try {
-        if (!req.user.emailVerified) {
-          try {
-            console.log('[GoogleCallback] Unverified user, sending OTP to:', req.user.email);
-            const otp = generateOTP();
-            const hashedOTP = await bcrypt.hash(otp, 10);
-            await req.user.update({
-              otpCode: hashedOTP,
-              otpExpiry: new Date(Date.now() + 10 * 60 * 1000)
-            });
-            await sendOTPEmail(req.user.email, otp, req.user.name);
-            console.log('[GoogleCallback] OTP sent successfully');
-          } catch (emailErr) {
-            console.error('[GoogleCallback] Failed to send OTP:', emailErr);
-          }
-          return res.redirect(`/verify-otp.html?email=${encodeURIComponent(req.user.email)}`);
-        }
 
-        console.log('[GoogleCallback] Verified user, signing JWT for userId:', req.user.id);
-        const token = jwt.sign({ userId: req.user.id }, JWT_SECRET, { expiresIn: '7d' });
-        res.redirect(`/auth-success.html?token=${token}&user=${encodeURIComponent(JSON.stringify({
-          id: req.user.id,
-          name: req.user.name,
-          email: req.user.email,
-          role: req.user.role
-        }))}`);
-      } catch (callbackErr) {
-        console.error('[Google OAuth Callback] Processing error:', callbackErr);
-        return res.redirect('/login.html?error=' + encodeURIComponent('Lỗi xử lý đăng nhập. Vui lòng thử lại.'));
-      }
+    const profileResp = await fetch(GOOGLE_USERINFO_URL, {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
-  })(req, res, next);
+    const profile = await profileResp.json();
+    if (!profileResp.ok || !profile.email) {
+      console.error('[Google OAuth Callback] Failed to load Google profile:', profile);
+      return res.redirect('/login.html?error=' + encodeURIComponent('Không lấy được thông tin tài khoản Google.'));
+    }
+
+    let user = await User.findOne({ where: { email: profile.email } });
+    let isNewUser = false;
+    if (!user) {
+      user = await User.create({
+        name: profile.name || profile.display_name || profile.email,
+        email: profile.email,
+        password: 'google_oauth_' + Date.now(),
+        googleId: profile.id,
+        role: 'customer',
+        emailVerified: false
+      });
+      isNewUser = true;
+    } else if (!user.googleId) {
+      await user.update({ googleId: profile.id });
+    }
+
+    if (!user.emailVerified) {
+      try {
+        console.log('[GoogleCallback] Unverified user, sending OTP to:', user.email);
+        const otp = generateOTP();
+        const hashedOTP = await bcrypt.hash(otp, 10);
+        await user.update({
+          otpCode: hashedOTP,
+          otpExpiry: new Date(Date.now() + 10 * 60 * 1000)
+        });
+        await sendOTPEmail(user.email, otp, user.name);
+        console.log('[GoogleCallback] OTP sent successfully');
+      } catch (emailErr) {
+        console.error('[GoogleCallback] Failed to send OTP:', emailErr);
+      }
+      return res.redirect(`/verify-otp.html?email=${encodeURIComponent(user.email)}`);
+    }
+
+    console.log('[GoogleCallback] Verified user, signing JWT for userId:', user.id, 'isNewUser:', isNewUser);
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+    return res.redirect(`/auth-success.html?token=${token}&user=${encodeURIComponent(JSON.stringify({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }))}`);
+  } catch (err) {
+    console.error('[Google OAuth Callback] Processing error:', err);
+    return res.redirect('/login.html?error=' + encodeURIComponent('Lỗi xử lý đăng nhập. Vui lòng thử lại.'));
+  }
+});
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
 });
 
 // Static file serving and SPA routing handled by Cloudflare Pages

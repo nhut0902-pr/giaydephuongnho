@@ -8,6 +8,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi Tiết Sản Phẩm - Giày Dép Hương Nhớ</title>
+    <meta name="description" content="Xem chi tiết từng sản phẩm giày dép, giá bán, hình ảnh và tình trạng kho tại Giày Dép Hương Nhớ.">
+    <link rel="canonical" href="https://giaydephuongnho.pages.dev/product-detail.html">
     <link rel="icon" href="/favicon.jpg" type="image/jpeg">
     <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -55,6 +57,81 @@
     <script src="js/main.js?v=9"></script>
     <script>document.addEventListener('DOMContentLoaded', initPolicyNotice);</script>
     <script>
+        function updateProductSeo(product) {
+            const url = new URL(window.location.href);
+            const canonical = `${url.origin}${url.pathname}?id=${encodeURIComponent(product.id)}`;
+            const description = (product.description || product.name || 'Sản phẩm giày dép').replace(/\s+/g, ' ').trim();
+            const title = `${product.name} - Giày Dép Hương Nhớ`;
+            const image = product.image || (product.images && product.images[0] && product.images[0].url) || '';
+
+            document.title = title;
+
+            const ensureMeta = (selector, attr = 'name') => {
+                let el = document.head.querySelector(`${attr === 'property' ? 'meta[property="' : 'meta[name="'}${selector}"]`);
+                if (!el) {
+                    el = document.createElement('meta');
+                    el.setAttribute(attr, selector);
+                    document.head.appendChild(el);
+                }
+                return el;
+            };
+
+            const setMeta = (selector, value, attr = 'name') => {
+                const el = ensureMeta(selector, attr);
+                el.setAttribute('content', value);
+            };
+
+            let canonicalEl = document.head.querySelector('link[rel="canonical"]');
+            if (!canonicalEl) {
+                canonicalEl = document.createElement('link');
+                canonicalEl.setAttribute('rel', 'canonical');
+                document.head.appendChild(canonicalEl);
+            }
+            canonicalEl.setAttribute('href', canonical);
+
+            setMeta('description', description);
+            setMeta('robots', 'index, follow');
+            setMeta('og:type', 'product', 'property');
+            setMeta('og:url', canonical, 'property');
+            setMeta('og:title', title, 'property');
+            setMeta('og:description', description, 'property');
+            if (image) setMeta('og:image', image, 'property');
+            setMeta('twitter:card', 'summary_large_image');
+            setMeta('twitter:url', canonical);
+            setMeta('twitter:title', title);
+            setMeta('twitter:description', description);
+
+            const ldJson = {
+                "@context": "https://schema.org/",
+                "@type": "Product",
+                "name": product.name,
+                "image": image ? [image] : undefined,
+                "description": description,
+                "sku": String(product.id),
+                "brand": {
+                    "@type": "Brand",
+                    "name": "Giày Dép Hương Nhớ"
+                },
+                "offers": {
+                    "@type": "Offer",
+                    "url": canonical,
+                    "priceCurrency": "VND",
+                    "price": product.discountedPrice || product.price,
+                    "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                    "itemCondition": "https://schema.org/NewCondition"
+                }
+            };
+
+            let ldScript = document.getElementById('product-jsonld');
+            if (!ldScript) {
+                ldScript = document.createElement('script');
+                ldScript.type = 'application/ld+json';
+                ldScript.id = 'product-jsonld';
+                document.head.appendChild(ldScript);
+            }
+            ldScript.textContent = JSON.stringify(ldJson);
+        }
+
         let currentProduct = null;
         let quantity = 1;
         let selectedSize = null;
@@ -70,7 +147,7 @@
                     new Promise(resolve => setTimeout(resolve, 500))
                 ]);
                 currentProduct = product;
-                document.title = `${currentProduct.name} - Giày Dép Hương Nhớ`;
+                updateProductSeo(currentProduct);
 
                 const allImages = [currentProduct.image, ...(currentProduct.images || []).map(img => img.url)].filter(Boolean);
 
@@ -150,26 +227,6 @@
           </div>
         `;
 
-                // Add Structured Data for SEO
-                const script = document.createElement('script');
-                script.type = 'application/ld+json';
-                script.text = JSON.stringify({
-                    "@context": "https://schema.org/",
-                    "@type": "Product",
-                    "name": currentProduct.name,
-                    "image": currentProduct.image,
-                    "description": currentProduct.description,
-                    "sku": currentProduct.id,
-                    "offers": {
-                        "@type": "Offer",
-                        "url": window.location.href,
-                        "priceCurrency": "VND",
-                        "price": currentProduct.discountedPrice || currentProduct.price,
-                        "availability": currentProduct.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-                        "itemCondition": "https://schema.org/NewCondition"
-                    }
-                });
-                document.head.appendChild(script);
             } catch (error) {
                 document.getElementById('product-detail').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Sản phẩm không tồn tại</h3><a href="/products.html" class="btn btn-primary">Xem sản phẩm khác</a></div>';
             }

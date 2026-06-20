@@ -8,6 +8,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bài Viết - Giày Dép Hương Nhớ</title>
+    <meta name="description" content="Đọc bài viết, kinh nghiệm chọn giày dép và mẹo phối đồ từ Giày Dép Hương Nhớ.">
+    <link rel="canonical" href="https://giaydephuongnho.pages.dev/blog-detail.html">
     <link rel="icon" href="/favicon.jpg" type="image/jpeg">
     <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -183,13 +185,85 @@
     <script src="js/main.js?v=9"></script>
     <script>document.addEventListener('DOMContentLoaded', initPolicyNotice);</script>
     <script>
+        function updateBlogSeo(post) {
+            const url = new URL(window.location.href);
+            const canonical = `${url.origin}${url.pathname}${url.search}`;
+            const description = (post.excerpt || post.summary || post.title || 'Bài viết từ Giày Dép Hương Nhớ').replace(/\s+/g, ' ').trim();
+            const title = `${post.title} - Giày Dép Hương Nhớ`;
+            const image = post.thumbnail || '';
+
+            document.title = title;
+
+            const ensureMeta = (selector, attr = 'name') => {
+                let el = document.head.querySelector(`${attr === 'property' ? 'meta[property="' : 'meta[name="'}${selector}"]`);
+                if (!el) {
+                    el = document.createElement('meta');
+                    el.setAttribute(attr, selector);
+                    document.head.appendChild(el);
+                }
+                return el;
+            };
+
+            const setMeta = (selector, value, attr = 'name') => {
+                const el = ensureMeta(selector, attr);
+                el.setAttribute('content', value);
+            };
+
+            let canonicalEl = document.head.querySelector('link[rel="canonical"]');
+            if (!canonicalEl) {
+                canonicalEl = document.createElement('link');
+                canonicalEl.setAttribute('rel', 'canonical');
+                document.head.appendChild(canonicalEl);
+            }
+            canonicalEl.setAttribute('href', canonical);
+
+            setMeta('description', description);
+            setMeta('robots', 'index, follow');
+            setMeta('og:type', 'article', 'property');
+            setMeta('og:url', canonical, 'property');
+            setMeta('og:title', title, 'property');
+            setMeta('og:description', description, 'property');
+            if (image) setMeta('og:image', image, 'property');
+            setMeta('twitter:card', 'summary_large_image');
+            setMeta('twitter:url', canonical);
+            setMeta('twitter:title', title);
+            setMeta('twitter:description', description);
+
+            const ldJson = {
+                "@context": "https://schema.org",
+                "@type": "BlogPosting",
+                "headline": post.title,
+                "description": description,
+                "url": canonical,
+                "image": image ? [image] : undefined,
+                "datePublished": post.createdAt,
+                "author": {
+                    "@type": "Person",
+                    "name": post.authorName || "Giày Dép Hương Nhớ"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "Giày Dép Hương Nhớ"
+                }
+            };
+
+            let ldScript = document.getElementById('blog-jsonld');
+            if (!ldScript) {
+                ldScript = document.createElement('script');
+                ldScript.type = 'application/ld+json';
+                ldScript.id = 'blog-jsonld';
+                document.head.appendChild(ldScript);
+            }
+            ldScript.textContent = JSON.stringify(ldJson);
+        }
+
         async function loadBlogDetail() {
             const slug = new URLSearchParams(window.location.search).get('slug');
             if (!slug) { window.location.href = '/blog.html'; return; }
 
             try {
                 const post = await blogAPI.getBySlug(slug);
-                document.title = `${post.title} - Giày Dép Hương Nhớ`;
+                updateBlogSeo(post);
 
                 const url = encodeURIComponent(window.location.href);
                 const title = encodeURIComponent(post.title);
