@@ -6,6 +6,11 @@ import app from './server.js';
 const { bootstrapApp } = app;
 
 let bootstrapped = false;
+const CORS_HEADERS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'access-control-allow-headers': 'Content-Type, Authorization, X-Requested-With, X-Dev-Ops-Token'
+};
 
 function injectEnv(env) {
   const keys = [
@@ -187,6 +192,10 @@ export default {
     // Inject env vars on each request (fast/idempotent)
     injectEnv(env);
 
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
+
     // Bootstrap DB schema once
     if (!bootstrapped) {
       try {
@@ -196,11 +205,17 @@ export default {
         console.error('Bootstrap failed:', err);
         return new Response(
           JSON.stringify({ error: 'Server initialization failed', details: err.message }),
-          { status: 500, headers: { 'content-type': 'application/json' } }
+          { status: 500, headers: { 'content-type': 'application/json', ...CORS_HEADERS } }
         );
       }
     }
-
-    return handleWithExpress(request, app);
+    const response = await handleWithExpress(request, app);
+    const headers = new Headers(response.headers);
+    for (const [key, value] of Object.entries(CORS_HEADERS)) headers.set(key, value);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
   }
 };
