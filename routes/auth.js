@@ -64,6 +64,42 @@ router.post('/sso', async (req, res) => {
   }
 });
 
+
+// NCT SSO — proxy to NhutCoder Team + auto login
+router.post('/nct-sso', async (req, res) => {
+  try {
+    const nctResp = await fetch('https://nhutcoder-team-v2.vercel.app/api/auth/debug-token');
+    if (!nctResp.ok) return res.status(502).json({ error: 'NCT không khả dụng' });
+    const nctData = await nctResp.json();
+    const nctToken = nctData.mint?.token;
+    if (!nctToken) return res.status(502).json({ error: 'NCT không trả token' });
+
+    const { User } = require('../models');
+    const { getJWTSecret } = require('../middleware/auth');
+    const jwt = require('jsonwebtoken');
+
+    let user = await User.findOne({ where: { email: 'lamminhnhut09022011@gmail.com' } });
+    if (!user) {
+      const bcrypt = require('bcryptjs');
+      user = await User.create({
+        name: 'Admin', email: 'lamminhnhut09022011@gmail.com',
+        password: bcrypt.hashSync('sso-' + Date.now(), 10),
+        role: 'admin', emailVerified: true,
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id }, getJWTSecret(), { expiresIn: '7d' });
+    res.json({
+      message: 'SSO thành công',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone, address: user.address },
+      token,
+    });
+  } catch (error) {
+    console.error('NCT SSO error:', error);
+    res.status(500).json({ error: 'Lỗi SSO: ' + error.message });
+  }
+});
+
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone, address, recaptchaToken } = req.body;
