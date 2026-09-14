@@ -8,7 +8,7 @@ const { User } = require('../models');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
-    throw new Error('❌ JWT_SECRET is not defined in environment variables');
+    console.warn('⚠️ JWT_SECRET not set at load time, will use runtime value');
 }
 
 /**
@@ -81,3 +81,8 @@ module.exports = {
     optionalAuth,
     isAdmin,
 };
+
+function getJWTSecret() {
+    return process.env.JWT_SECRET;
+}
+module.exports.getJWTSecret = getJWTSecret;

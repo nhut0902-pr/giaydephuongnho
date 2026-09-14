@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
-const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
+const { authenticateToken, getJWTSecret } = require('../middleware/auth');
 const { generateOTP, sendOTPEmail } = require('../utils/mailer');
 
 const router = express.Router();
@@ -164,7 +164,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Generate token
-        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ userId: user.id }, getJWTSecret(), { expiresIn: '7d' });
 
         res.json({
             message: 'Đăng nhập thành công',
@@ -221,7 +221,7 @@ router.post('/verify-otp', async (req, res) => {
         });
 
         // Generate token
-        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ userId: user.id }, getJWTSecret(), { expiresIn: '7d' });
 
         res.json({
             message: 'Xác thực thành công!',
