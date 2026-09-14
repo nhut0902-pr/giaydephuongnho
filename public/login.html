@@ -188,7 +188,19 @@
                 <div id="forms-view" class="space-y-5">
                     <h2 class="text-xl font-bold text-center text-gray-700" id="form-title">Đăng Nhập</h2>
 
-                    <form id="auth-form" class="space-y-4" onsubmit="handleSubmit(event)">
+                    
+<!-- SSO Login with NhutCoder Team -->
+<div style="margin-bottom: 20px;">
+    <a href="https://nhutcoder-team-v2.vercel.app/api/auth/sso?redirect=https://giaydephuongnho.pages.dev/sso-callback.html"
+       style="display: block; width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: opacity 0.2s;"
+       onmouseover="this.style.opacity='0.9'"
+       onmouseout="this.style.opacity='1'">
+        Đăng nhập với NhutCoder Team
+    </a>
+</div>
+<div style="text-align: center; margin: 15px 0; color: #999; font-size: 13px;">— hoặc —</div>
+
+<form id="auth-form" class="space-y-4" onsubmit="handleSubmit(event)">
 
                         <!-- Name Field (Only for Registration) -->
                         <div id="name-field-wrapper" class="hidden group relative transition-all duration-300">

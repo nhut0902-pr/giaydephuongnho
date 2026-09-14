@@ -27,6 +27,43 @@ async function verifyTurnstile(token) {
 }
 
 // Register
+
+// SSO Login — receive verified user info from NhutCoder Team
+router.post('/sso', async (req, res) => {
+  try {
+    const { email, name, nctToken } = req.body;
+    if (!email || !nctToken) {
+      return res.status(400).json({ error: 'Thieu email hoac token SSO' });
+    }
+    const { User } = require('../models');
+    const bcrypt = require('bcryptjs');
+    const { getJWTSecret } = require('../middleware/auth');
+    const jwt = require('jsonwebtoken');
+
+    let user = await User.findOne({ where: { email } });
+    if (!user) {
+      const randomPassword = bcrypt.hashSync(Math.random().toString(36).slice(-16), 10);
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email,
+        password: randomPassword,
+        role: 'customer',
+        emailVerified: true,
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id }, getJWTSecret(), { expiresIn: '7d' });
+    res.json({
+      message: 'SSO thanh cong',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone, address: user.address },
+      token,
+    });
+  } catch (error) {
+    console.error('SSO error:', error);
+    res.status(500).json({ error: 'Da xay ra loi' });
+  }
+});
+
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone, address, recaptchaToken } = req.body;
