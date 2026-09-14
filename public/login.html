@@ -92,8 +92,8 @@ async function verifySSO() {
         const data = await resp.json();
         
         if (data.token) {
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('userInfo', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
             document.getElementById('popupHint').innerHTML = '✅ Đăng nhập thành công! Đang chuyển hướng...';
             setTimeout(() => { window.location.href = '/'; }, 1500);
         } else {
@@ -117,8 +117,8 @@ async function verifyAndLogin(token) {
         });
         const data = await resp.json();
         if (data.token) {
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('userInfo', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
             window.location.href = '/';
         }
     } catch(e) {}

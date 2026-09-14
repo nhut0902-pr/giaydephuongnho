@@ -43,8 +43,8 @@ async function login(e) {
         const data = await resp.json();
         
         if (data.token) {
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('userInfo', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
             window.location.href = '/';
         } else {
             document.getElementById('error').textContent = data.error || 'Đăng nhập thất bại';

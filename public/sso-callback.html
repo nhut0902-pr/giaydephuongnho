@@ -31,8 +31,8 @@ async function handleSSO() {
         });
         const data = await resp.json();
         if (data.token) {
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('userInfo', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
             document.getElementById('content').innerHTML = '<div class="ok">✅</div><p>Đăng nhập thành công!</p><p>Đang chuyển hướng...</p>';
             setTimeout(() => { window.location.href = '/'; }, 1500);
         } else {
