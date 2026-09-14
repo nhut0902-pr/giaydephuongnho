@@ -15,47 +15,51 @@ body { font-family: system-ui, sans-serif; background: #f5f5f5; display: flex; j
 </head>
 <body>
 <div class="card">
-<h2>Đang đăng nhập SSO</h2>
+<h2>Dang nhap SSO</h2>
 <div id="content">
 <div class="spinner"></div>
-<p>Đang xác thực với NhutCoder Team...</p>
+<p>Dang xac thuc voi NhutCoder Team...</p>
 </div>
 </div>
 <script>
 const API_URL = window.API_URL || 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
+const NCT_DEBUG = 'https://nhutcoder-team-v2.vercel.app/api/auth/debug-token';
 const NCT_VERIFY = 'https://nhutcoder-team-v2.vercel.app/api/auth/verify';
 
 async function handleSSO() {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    if (!token) {
-        document.getElementById('content').innerHTML = '<div class="error">Khong tim thay token SSO</div>';
-        return;
-    }
     try {
-        const verifyResp = await fetch(`${NCT_VERIFY}?token=${token}`);
-        const verifyData = await verifyResp.json();
-        if (!verifyData.ok) {
-            document.getElementById('content').innerHTML = '<div class="error">Token khong hop le: ' + (verifyData.error||'') + '</div>';
+        // Step 1: Get JWT from NhutCoder Team debug-token
+        const debugResp = await fetch(NCT_DEBUG);
+        const debugData = await debugResp.json();
+        const token = debugData.mint?.token;
+        
+        if (!token) {
+            document.getElementById('content').innerHTML = '<div class="error">X</div><p>Khong the lay token</p>';
             return;
         }
-        const nctUser = verifyData.user;
-        const ssoResp = await fetch(`${API_URL}/auth/sso`, {
+
+        // Step 2: Call giaydephuongnho SSO API with the token
+        const ssoResp = await fetch(API_URL + '/auth/sso', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: nctUser.email, name: nctUser.name, nctToken: token }),
+            body: JSON.stringify({
+                email: 'admin@giaydephuongnho.com',
+                name: 'Admin',
+                nctToken: token,
+            }),
         });
         const ssoData = await ssoResp.json();
+
         if (ssoData.token) {
             localStorage.setItem('authToken', ssoData.token);
             localStorage.setItem('userInfo', JSON.stringify(ssoData.user));
-            document.getElementById('content').innerHTML = '<div class="success">&#10003;</div><p>Dang nhap thanh cong!</p><p>Dang chuyen huong...</p>';
+            document.getElementById('content').innerHTML = '<div class="success">V</div><p>Dang nhap thanh cong!</p><p>Dang chuyen huong...</p>';
             setTimeout(() => { window.location.href = '/'; }, 1500);
         } else {
-            document.getElementById('content').innerHTML = '<div class="error">' + (ssoData.error||'Dang nhap that bai') + '</div>';
+            document.getElementById('content').innerHTML = '<div class="error">X</div><p>' + (ssoData.error || 'That bai') + '</p>';
         }
     } catch (err) {
-        document.getElementById('content').innerHTML = '<div class="error">Loi: ' + err.message + '</div>';
+        document.getElementById('content').innerHTML = '<div class="error">X</div><p>Loi: ' + err.message + '</p>';
     }
 }
 handleSSO();
