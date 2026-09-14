@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login | Giày Dép Hương Nhớ</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#1a1a2e;min-height:100vh;display:flex;justify-content:center;align-items:center}
+.card{background:#fff;border-radius:20px;padding:40px;max-width:380px;width:90%;text-align:center}
+input{width:100%;padding:14px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:15px;box-sizing:border-box}
+input:focus{border-color:#667eea;outline:none}
+button{width:100%;padding:14px;background:#1a1a2e;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px}
+button:hover{opacity:0.9}
+.back{display:block;margin-top:15px;color:#666;text-decoration:none;font-size:13px}
+.error{color:#e74c3c;font-size:13px;margin:8px 0;display:none}
+</style>
+</head>
+<body>
+<div class="card">
+<h2 style="margin-bottom:20px;color:#333">🔐 Admin Login</h2>
+<form onsubmit="login(event)">
+<input type="email" id="email" placeholder="Email" value="lamminhnhut09022011@gmail.com" required>
+<input type="password" id="password" placeholder="Mật khẩu" required>
+<div class="error" id="error"></div>
+<button type="submit">Đăng nhập</button>
+</form>
+<a href="/login" class="back">← Quay lại</a>
+</div>
+<script>
+const API_URL = 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
+async function login(e) {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const resp = await fetch(API_URL + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, recaptchaToken: 'dummy' })
+        });
+        const data = await resp.json();
+        
+        if (data.token) {
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('userInfo', JSON.stringify(data.user));
+            window.location.href = '/';
+        } else {
+            document.getElementById('error').textContent = data.error || 'Đăng nhập thất bại';
+            document.getElementById('error').style.display = 'block';
+        }
+    } catch(err) {
+        document.getElementById('error').textContent = 'Lỗi kết nối: ' + err.message;
+        document.getElementById('error').style.display = 'block';
+    }
+}
+</script>
+</body>
+</html>
