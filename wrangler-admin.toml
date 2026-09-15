@@ -1,0 +1,7 @@
+name = "giaydephuongnho-admin-api"
+main = "worker-admin.js"
+compatibility_date = "2026-05-31"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+JWT_SECRET = "giaydephuongnho-jwt-secret-2024"

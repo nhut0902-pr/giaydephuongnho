@@ -133,7 +133,7 @@
 
             try {
                 // Get all flash sales, take the latest one
-                const response = await fetch('/api/flash-sale/admin/all', {
+                const response = await fetch(`${ADMIN_API_URL}/flash-sale/admin/all`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const sales = await response.json();
@@ -160,7 +160,7 @@
                 }
 
                 // Load products for dropdown
-                const prodRes = await fetch('/api/products');
+                const prodRes = await fetch(`${API_URL}/products`);
                 allProducts = await prodRes.json();
                 const select = document.getElementById('item-product-id');
                 select.innerHTML = '<option value="">-- Chọn sản phẩm --</option>' +
@@ -273,7 +273,7 @@
             };
 
             try {
-                const response = await fetch(`/api/flash-sale/admin/${currentFlashSaleId}/items`, {
+                const response = await fetch(`${ADMIN_API_URL}/flash-sale/admin/${currentFlashSaleId}/items`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -296,7 +296,7 @@
             if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi Flash Sale?')) return;
 
             try {
-                const response = await fetch(`/api/flash-sale/admin/items/${itemId}`, {
+                const response = await fetch(`${ADMIN_API_URL}/flash-sale/admin/items/${itemId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });

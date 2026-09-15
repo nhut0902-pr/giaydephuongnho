@@ -104,7 +104,7 @@
             if (!(await requireAdmin())) return;
 
             try {
-                const response = await fetch('/api/admin/users', {
+                const response = await fetch(`${ADMIN_API_URL}/admin/users`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const users = await response.json();

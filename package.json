@@ -4,9 +4,13 @@
   "description": "Website bán giày dép online - Giày Dép Hương Nhớ",
   "scripts": {
     "postinstall": "prisma generate",
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "node server-public.js",
+    "start:admin": "node server-admin.js",
+    "dev": "node server-public.js",
     "db:generate": "prisma generate",
+    "deploy:public": "wrangler deploy --config wrangler-public.toml",
+    "deploy:admin": "wrangler deploy --config wrangler-admin.toml",
+    "deploy:all": "npm run deploy:public && npm run deploy:admin",
     "migrate-images": "node migrate-images.js",
     "test-images": "node test-multiple-images.js"
   },

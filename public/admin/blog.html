@@ -379,7 +379,7 @@
             const token = localStorage.getItem('token');
 
             try {
-                const resp = await fetch('/api/admin/upload', {
+                const resp = await fetch(`${ADMIN_API_URL}/admin/upload`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData

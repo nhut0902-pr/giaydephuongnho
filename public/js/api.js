@@ -1,7 +1,49 @@
 // Keep the frontend pointed at the currently deployed API worker.
-// This value must match the backend deployment in wrangler.toml.
+// Public Worker: lightweight (no multer/imagekit/pdfkit) — fast cold-start
 const API_URL = window.API_URL || 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
 window.API_URL = API_URL;
+
+// Admin Worker: heavy deps (multer/imagekit/pdfkit) — slower cold-start but rarely hit
+const ADMIN_API_URL = window.ADMIN_API_URL || 'https://giaydephuongnho-admin-api.lamminhnhut09022011.workers.dev/api';
+window.ADMIN_API_URL = ADMIN_API_URL;
+
+// Routes that belong to admin Worker (heavy: image upload, PDF, admin stats)
+function isAdminEndpoint(endpoint, options = {}) {
+    const method = (options.method || 'GET').toUpperCase();
+
+    // Pure admin path prefixes
+    if (/^\/admin(\/|$)/.test(endpoint)) return true;
+    if (/^\/invoice(\/|$)/.test(endpoint)) return true;
+    if (/^\/init-db/.test(endpoint)) return true;
+    if (/^\/blog\/admin(\/|$)/.test(endpoint)) return true;
+    if (/^\/orders\/admin(\/|$)/.test(endpoint)) return true;
+    if (/^\/marketing\/admin/.test(endpoint)) return true;
+    if (/^\/flash-sale\/admin(\/|$)/.test(endpoint)) return true;
+
+    // Write operations (POST/PUT/DELETE) on resources that require admin
+    if (method !== 'GET' && method !== 'HEAD') {
+        // products POST/PUT/DELETE = admin (admin creates/edits products)
+        if (/^\/products(\/|$)/.test(endpoint)) return true;
+        // blog POST/PUT/DELETE = admin (admin writes blog posts)
+        if (/^\/blog(\/|$)/.test(endpoint)) return true;
+        // discounts POST/PUT/DELETE = admin
+        if (/^\/discounts(\/|$)/.test(endpoint)) return true;
+        // flash-sale POST/PUT/DELETE = admin (only admin manages sales)
+        if (/^\/flash-sale(\/|$)/.test(endpoint)) return true;
+        // marketing PUT = admin
+        if (/^\/marketing(\/|$)/.test(endpoint)) return true;
+        // push admin broadcast
+        if (/^\/push\/admin(\/|$)/.test(endpoint)) return true;
+        // reviews DELETE = admin (moderation)
+        if (/^\/reviews(\/|$)/.test(endpoint) && method === 'DELETE') return true;
+    }
+
+    return false;
+}
+
+function resolveApiBase(endpoint, options) {
+    return isAdminEndpoint(endpoint, options) ? ADMIN_API_URL : API_URL;
+}
 
 // API Helper Functions
 // Có retry 1 lần nếu gặp lỗi 5xx hoặc network error (Worker cold-start)
@@ -20,8 +62,10 @@ async function api(endpoint, options = {}) {
         config.headers['Content-Type'] = 'application/json';
     }
 
+    const baseUrl = resolveApiBase(endpoint, options);
+
     const doFetch = async () => {
-        const response = await fetch(`${API_URL}${endpoint}`, config);
+        const response = await fetch(`${baseUrl}${endpoint}`, config);
         const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
         let data = null;
