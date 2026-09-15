@@ -4,6 +4,7 @@ const API_URL = window.API_URL || 'https://giaydephuongnho-api.lamminhnhut090220
 window.API_URL = API_URL;
 
 // API Helper Functions
+// Có retry 1 lần nếu gặp lỗi 5xx hoặc network error (Worker cold-start)
 async function api(endpoint, options = {}) {
     const token = localStorage.getItem('token');
     const hasBody = options.body !== undefined && options.body !== null;
@@ -19,20 +20,55 @@ async function api(endpoint, options = {}) {
         config.headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(`${API_URL}${endpoint}`, config);
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    const doFetch = async () => {
+        const response = await fetch(`${API_URL}${endpoint}`, config);
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
-    let data = null;
-    let rawText = '';
+        let data = null;
+        let rawText = '';
 
-    if (contentType.includes('application/json')) {
-        try {
-            data = await response.json();
-        } catch (e) {
-            data = null;
+        if (contentType.includes('application/json')) {
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = null;
+            }
+        } else {
+            rawText = await response.text();
         }
-    } else {
-        rawText = await response.text();
+
+        return { response, data, rawText };
+    };
+
+    let result;
+    try {
+        result = await doFetch();
+    } catch (networkErr) {
+        // Network error (Failed to fetch) → retry 1 lần sau 1s
+        await new Promise(r => setTimeout(r, 1000));
+        try {
+            result = await doFetch();
+        } catch (retryErr) {
+            throw new Error('Không kết nối được tới server. Vui lòng kiểm tra mạng và thử lại.');
+        }
+    }
+
+    const { response, data, rawText } = result;
+
+    // Lỗi 5xx → retry 1 lần (Worker cold-start có thể trả 500 tạm thời)
+    if (response.status >= 500) {
+        await new Promise(r => setTimeout(r, 1000));
+        try {
+            const retry = await doFetch();
+            if (retry.response.ok) {
+                return retry.data !== null ? retry.data : (retry.rawText.trim() ? JSON.parse(retry.rawText) : {});
+            }
+            // Vẫn lỗi → throw với thông báo thân thiện
+            throw new Error('Server đang tải lại, vui lòng thử lại sau giây lát.');
+        } catch (retryErr) {
+            if (retryErr.message) throw retryErr;
+            throw new Error('Server đang tải lại, vui lòng thử lại sau giây lát.');
+        }
     }
 
     if (!response.ok) {

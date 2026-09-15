@@ -174,7 +174,7 @@ function requireLogin(redirectPath = null) {
     return true;
 }
 
-// Require admin - robust version with server check
+// Require admin - robust version with server check + retry on transient errors
 async function requireAdmin() {
     // 1. Quick check
     if (!isAdmin()) {
@@ -185,25 +185,75 @@ async function requireAdmin() {
     // 2. Hide content briefly while verifying with server
     document.body.style.opacity = '0';
 
-    try {
-        const response = await fetch(`${API_URL}/auth/profile`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const data = await response.json();
+    const token = localStorage.getItem('token');
+    const maxAttempts = 3;
+    let lastError = null;
 
-        if (!response.ok || data.user.role !== 'admin') {
-            throw new Error('Unauthorized');
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            const response = await fetch(`${API_URL}/auth/profile`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            // Lỗi 5xx (Worker cold-start, network glitch) → retry, KHÔNG logout
+            if (response.status >= 500 || response.status === 0) {
+                lastError = new Error('Server error ' + response.status);
+                if (attempt < maxAttempts) {
+                    await new Promise(r => setTimeout(r, 800 * attempt));
+                    continue;
+                }
+                throw lastError;
+            }
+
+            // 401/403 → token thật sự hết hạn → logout
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('Unauthorized');
+            }
+
+            // Parse JSON cẩn thận (tránh crash nếu Worker trả HTML lỗi)
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                lastError = new Error('Non-JSON response');
+                if (attempt < maxAttempts) {
+                    await new Promise(r => setTimeout(r, 800 * attempt));
+                    continue;
+                }
+                throw lastError;
+            }
+
+            const data = await response.json();
+            if (!response.ok || data.user.role !== 'admin') {
+                throw new Error('Unauthorized');
+            }
+
+            // Success, show body
+            document.body.style.opacity = '1';
+            return true;
+        } catch (e) {
+            // Network error (Failed to fetch) → retry
+            lastError = e;
+            if (e.message === 'Unauthorized') {
+                break; // Không retry nếu là lỗi auth thật sự
+            }
+            if (attempt < maxAttempts) {
+                await new Promise(r => setTimeout(r, 800 * attempt));
+                continue;
+            }
         }
+    }
 
-        // Success, show body
-        document.body.style.opacity = '1';
-        return true;
-    } catch (e) {
+    // Tất cả retry fail — KHÔNG logout ngay vì có thể là server issue
+    if (lastError && lastError.message === 'Unauthorized') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login.html';
         return false;
     }
+
+    // Lỗi khác (server down, network) → show error, không redirect
+    document.body.style.opacity = '1';
+    showToast('Không kết nối được tới server. Vui lòng tải lại trang.', 'error');
+    return false;
 }
 
 // Sync local cart to server after login
