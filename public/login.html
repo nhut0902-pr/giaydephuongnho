@@ -17,7 +17,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Montserrat:wght@400;700;900&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="css/style.css?v=7">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Feather Icons (cho Mail, Lock, v.v. giống Lucide) -->
@@ -246,10 +246,6 @@
                             </button>
                         </div>
 
-                        <div class="flex justify-center">
-                                data-theme="light"></div>
-                        </div>
-
                         <!-- Submit Button -->
                         <button type="submit" id="submit-btn"
                             class="w-full py-4 bg-gradient-to-r from-[#A948C8] to-[#4B61B5] text-white font-black rounded-2xl shadow-xl hover:shadow-purple-200 active:scale-95 transition-all flex items-center justify-center gap-3 relative z-10">
@@ -261,7 +257,7 @@
 
 <!-- SSO Login with NhutCoder Team -->
 <div style="margin-top:15px;">
-    <button type="button" onclick="loginNCT()" 
+    <button type="button" onclick="loginNCT(this)" 
         style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:transform 0.2s;">
         🔐 Đăng nhập với NhutCoder Team
     </button>
@@ -306,10 +302,10 @@
 
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="js/api.js?v=5"></script>
-    <script src="js/auth.js?v=3"></script>
-    <script src="js/main.js?v=9"></script>
-    <script src="/js/push-client.js?v=6"></script>
+    <script src="js/api.js?v=6"></script>
+    <script src="js/auth.js?v=4"></script>
+    <script src="js/main.js?v=10"></script>
+    <script src="/js/push-client.js?v=7"></script>
 
     <script>
         // Init feather icons
@@ -428,13 +424,6 @@
             // Set loading state
             triggerLogoAnimation();
 
-            // Validate Cloudflare Turnstile
-            const recaptchaResponse = turnstile.getResponse();
-            if (!recaptchaResponse) {
-                showToast('Vui lòng xác minh Turnstile!', 'error');
-                return;
-            }
-
             submitBtn.disabled = true;
             btnText.textContent = 'ĐANG XỬ LÝ...';
             btnIcon.style.display = 'none';
@@ -442,10 +431,7 @@
 
             try {
                 if (currentView === 'login') {
-                    await login(email, password, recaptchaResponse);
-                    // showSuccessView() will ideally be called if login doesn't inherently redirect, 
-                    // but `auth.js` -> `login()` typically redirects to '/'.
-                    // If it resolves, we show success here briefly before redirect.
+                    await login(email, password);
                     showSuccessView();
                     setTimeout(() => window.location.href = '/', 1500);
                 } else {
@@ -454,21 +440,17 @@
                         email: email,
                         phone: document.getElementById('reg-phone').value,
                         password: password,
-                        address: "",
-                        recaptchaToken: recaptchaResponse
+                        address: ""
                     };
                     await register(data);
                     showSuccessView();
                     setTimeout(() => window.location.href = '/', 1500);
                 }
             } catch (err) {
-                // Return to normal state on error
                 submitBtn.disabled = false;
                 btnText.textContent = currentView === 'login' ? 'ĐĂNG NHẬP' : 'HOÀN TẤT ĐĂNG KÝ';
                 btnIcon.style.display = 'inline-block';
                 spinner.classList.add('hidden');
-                // Reset Cloudflare Turnstile so user can try again
-                if (typeof turnstile !== 'undefined') turnstile.reset();
             }
         }
 
@@ -478,10 +460,13 @@
         }
     
 // SSO Login via Worker proxy (no redirect to NCT, no CORS issue)
-async function loginNCT() {
-    const btn = event.target;
-    btn.textContent = '⏳ Đang xác thực...';
-    btn.disabled = true;
+async function loginNCT(btn) {
+    if (!btn && typeof event !== 'undefined' && event) btn = event.currentTarget || event.target;
+    const originalText = btn ? btn.textContent : '';
+    if (btn) {
+        btn.textContent = '⏳ Đang xác thực...';
+        btn.disabled = true;
+    }
     
     try {
         const API_URL = window.API_URL || 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
@@ -497,14 +482,12 @@ async function loginNCT() {
             localStorage.setItem('user', JSON.stringify(data.user));
             window.location.href = '/';
         } else {
-            alert('SSO thất bại: ' + (data.error || 'Không rõ'));
-            btn.textContent = '🔐 Đăng nhập với NhutCoder Team';
-            btn.disabled = false;
+            showToast('SSO thất bại: ' + (data.error || 'Không rõ'), 'error');
+            if (btn) { btn.textContent = originalText; btn.disabled = false; }
         }
     } catch (err) {
-        alert('Lỗi: ' + err.message);
-        btn.textContent = '🔐 Đăng nhập với NhutCoder Team';
-        btn.disabled = false;
+        showToast('Lỗi SSO: ' + err.message, 'error');
+        if (btn) { btn.textContent = originalText; btn.disabled = false; }
     }
 }
 
