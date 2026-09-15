@@ -80,8 +80,8 @@ async function login(email, password, recaptchaToken) {
         localStorage.setItem('user', JSON.stringify(data.user));
         currentUser = data.user;
 
-        // Sync local cart to server
-        await syncLocalCartToServer();
+        // Sync local cart to server (non-blocking, never break login flow)
+        try { await syncLocalCartToServer(); } catch (_) {}
 
         showToast('Đăng nhập thành công!', 'success');
         updateAuthUI();
@@ -120,8 +120,8 @@ async function register(data) {
         localStorage.setItem('user', JSON.stringify(result.user));
         currentUser = result.user;
 
-        // Sync local cart to server
-        await syncLocalCartToServer();
+        // Sync local cart to server (non-blocking, never break register flow)
+        try { await syncLocalCartToServer(); } catch (_) {}
 
         showToast('Đăng ký thành công!', 'success');
         updateAuthUI();
@@ -208,6 +208,10 @@ async function requireAdmin() {
 
 // Sync local cart to server after login
 async function syncLocalCartToServer() {
+    // cart.js có thể chưa được load trên một số trang (vd: login.html, admin pages)
+    // Phải guard để không văng ReferenceError chặn luồng login
+    if (typeof getLocalCart !== 'function') return;
+
     const localCart = getLocalCart();
 
     if (localCart.length > 0 && isLoggedIn()) {
@@ -215,7 +219,7 @@ async function syncLocalCartToServer() {
             for (const item of localCart) {
                 await cartAPI.add(item.productId, item.quantity);
             }
-            clearLocalCart();
+            if (typeof clearLocalCart === 'function') clearLocalCart();
         } catch (error) {
             console.error('Error syncing cart:', error);
         }
