@@ -403,46 +403,33 @@
   </script>
   <!--End of Tawk.to Script-->
 
+
+
+
 <script>
-// Check login state and update header
 (function() {
     const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    const accountLinks = document.querySelectorAll('a[href*="login"]');
+    const userStr = localStorage.getItem('user');
+    const link = document.querySelector('a[href="/login"]');
+    if (!link) return;
     
-    if (token && user) {
+    if (token && userStr) {
         try {
-            const userInfo = JSON.parse(user);
-            accountLinks.forEach(link => {
-                if (link.textContent.includes('Tài Khoản') || link.textContent.includes('Đăng Nhập')) {
-                    link.textContent = '👋 ' + (userInfo.name || 'Tài khoản');
-                    link.href = '/account';
-                }
-            });
-            // Add logout to footer
-            const footer = document.querySelector('.footer-section:last-child');
-            if (footer && !document.getElementById('logout-link')) {
-                const logoutLink = document.createElement('a');
-                logoutLink.id = 'logout-link';
-                logoutLink.href = '#';
-                logoutLink.textContent = 'Đăng Xuất';
-                logoutLink.style.cssText = 'display:block;color:#999;margin-top:5px;font-size:12px';
-                logoutLink.onclick = function(e) {
-                    e.preventDefault();
+            const user = JSON.parse(userStr);
+            link.textContent = '👋 ' + (user.name || 'Tài khoản');
+            link.href = '#';
+            link.onclick = function(e) {
+                e.preventDefault();
+                if (confirm('Đăng xuất?')) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
-                    window.location.href = '/';
-                };
-                footer.appendChild(logoutLink);
-            }
+                    location.reload();
+                }
+            };
         } catch(e) {}
     } else {
-        accountLinks.forEach(link => {
-            if (link.textContent.includes('Tài Khoản')) {
-                link.textContent = 'Đăng Nhập';
-                link.href = '/login';
-            }
-        });
+        link.textContent = 'Đăng Nhập';
+        link.href = '/login';
     }
 })();
 </script>

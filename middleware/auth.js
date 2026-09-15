@@ -89,3 +89,6 @@ module.exports.getJWTSecret = getJWTSecret;
 
 function getJWTSecret() { return process.env.JWT_SECRET; }
 module.exports.getJWTSecret = getJWTSecret;
+
+function getJWTSecret() { return process.env.JWT_SECRET; }
+module.exports.getJWTSecret = getJWTSecret;

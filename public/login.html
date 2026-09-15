@@ -1,89 +1,490 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Đăng nhập | Giày Dép Hương Nhớ</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;justify-content:center;align-items:center}
-.card{background:#fff;border-radius:20px;padding:50px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
-.logo{font-size:28px;font-weight:800;color:#333;margin-bottom:8px}
-.subtitle{color:#666;font-size:14px;margin-bottom:35px}
-.btn-sso{display:block;width:100%;padding:16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:transform 0.2s;text-decoration:none;margin-bottom:15px}
-.btn-sso:hover{transform:translateY(-2px)}
-.btn-admin{display:block;width:100%;padding:14px;background:transparent;color:#666;border:2px solid #ddd;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.2s}
-.btn-admin:hover{border-color:#667eea;color:#667eea}
-.divider{display:flex;align-items:center;margin:20px 0;color:#999;font-size:13px}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:#ddd}
-.divider::before{margin-right:15px}
-.divider::after{margin-left:15px}
-.footer{margin-top:25px;font-size:12px;color:#999}
-.spinner{border:3px solid #f3f3f3;border-top:3px solid #667eea;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:15px auto;display:none}
-@keyframes spin{100%{transform:rotate(360deg)}}
-.popup-hint{background:#f0f4ff;border-radius:8px;padding:12px;margin:15px 0;font-size:13px;color:#4a5568;display:none}
-</style>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - Giày Dép Hương Nhớ</title>
+    <meta name="description" content="Đăng nhập tài khoản Giày Dép Hương Nhớ để đặt hàng, theo dõi đơn và quản lý thông tin cá nhân.">
+    <link rel="canonical" href="https://giaydephuongnho.pages.dev/login.html">
+    <link rel="icon" href="/favicon.jpg" type="image/jpeg">
+    <!-- Google Fonts for global style -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Montserrat:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Feather Icons (cho Mail, Lock, v.v. giống Lucide) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
+
+    <!-- Tailwind CSS (CDN) để sử dụng hệt như bản React của user -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hn-light': '#FAF8EE',
+                        'hn-dark': '#1A1135',
+                        'hn-purple': '#A948C8',
+                        'hn-blue': '#4B61B5'
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        oswald: ['Oswald', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .draw-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 0;
+        }
+
+        .animate-active .draw-path {
+            animation: electricDraw 2.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        @keyframes electricDraw {
+            0% {
+                stroke-dashoffset: 1000;
+                filter: brightness(2);
+                stroke-width: 6;
+            }
+
+            30% {
+                stroke-dashoffset: 500;
+                filter: brightness(1.5);
+                stroke-width: 5;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+                filter: brightness(1);
+                stroke-width: 4;
+            }
+        }
+
+        .stagger-1 {
+            animation-delay: 0.1s;
+        }
+
+        .stagger-2 {
+            animation-delay: 0.2s;
+        }
+
+        .stagger-3 {
+            animation-delay: 0.3s;
+        }
+
+        .stagger-4 {
+            animation-delay: 0.4s;
+        }
+
+        .stagger-5 {
+            animation-delay: 0.5s;
+        }
+
+        /* Disable the global background from style.css for auth page to let Tailwind take over */
+        body {
+            background: none !important;
+        }
+
+        .auth-wrapper {
+            background-color: #FAF8EE;
+            font-family: 'Montserrat', sans-serif;
+            color: #1A1135;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+    </style>
 </head>
+
 <body>
-<div class="card">
-<div class="logo">👟 Giày Dép Hương Nhớ</div>
-<div class="subtitle">Đăng nhập để mua sắm</div>
+    <!-- Hidden original header/cart stuff to keep script compatibility but clean UI -->
+    <div style="display:none;">
+        <div id="cart-count">0</div>
+        <div id="cart-items"></div>
+        <div id="cart-total"></div>
+        <div id="auth-section"></div>
+    </div>
 
-<button class="btn-sso" onclick="loginNCT()">
-    🔐 Đăng nhập với NhutCoder Team
-</button>
+    <!-- MAIN NEW UI BEGINS -->
+    <div class="auth-wrapper relative">
+        <div
+            class="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_30px_100px_rgba(169,72,200,0.12)] overflow-hidden border border-purple-50 transition-all duration-500 pb-8">
 
-<div class="popup-hint" id="popupHint">
-    Đang mở trang đăng nhập NhutCoder Team...<br>
-    Vui lòng đăng nhập (Google hoặc email) trên cửa sổ mới.<br>
-    Sau khi đăng nhập, quay lại trang này và nhấn "Xác thực".
+            <!-- Logo Section -->
+            <div class="pt-10 pb-4 flex flex-col items-center">
+                <div id="logo-container" class="w-40 h-36 cursor-pointer active:scale-90 transition-transform z-20"
+                    onclick="triggerLogoAnimation()">
+                    <svg id="interactive-logo" width="100%" height="100%" viewBox="0 0 160 140" class="drop-shadow-lg">
+                        <defs>
+                            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#A948C8" />
+                                <stop offset="100%" stop-color="#4B61B5" />
+                            </linearGradient>
+                        </defs>
+                        <g transform="translate(10, 10)" fill="none" stroke="url(#logoGrad)" stroke-width="4"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line class="draw-path stagger-1" x1="0" y1="120" x2="140" y2="120" />
+                            <rect class="draw-path stagger-2" x="10" y="32" width="120" height="88" rx="2" />
+                            <rect class="draw-path stagger-1" x="6" y="24" width="128" height="8" rx="1" />
+                            <path class="draw-path stagger-3"
+                                d="M 10 32 A 7.5 7.5 0 0 0 25 32 A 7.5 7.5 0 0 0 40 32 A 7.5 7.5 0 0 0 55 32 A 7.5 7.5 0 0 0 70 32 A 7.5 7.5 0 0 0 85 32 A 7.5 7.5 0 0 0 100 32 A 7.5 7.5 0 0 0 115 32 A 7.5 7.5 0 0 0 130 32" />
+                            <rect class="draw-path stagger-4" x="18" y="48" width="28" height="72" />
+                            <line class="draw-path stagger-5" x1="18" y1="65" x2="46" y2="65" stroke-width="2" />
+                            <rect class="draw-path stagger-4" x="55" y="48" width="65" height="72" />
+                            <rect class="draw-path stagger-5" x="62" y="55" width="51" height="58" stroke-width="2" />
+                            <g transform="translate(68, 62)">
+                                <path class="draw-path stagger-5"
+                                    d="M 38 40 L 38 15 L 22 15 L 22 25 Q 15 25 2 35 L 2 40 Z" stroke-width="3" />
+                                <line class="draw-path stagger-5" x1="-2" y1="45" x2="44" y2="45" stroke-width="2" />
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-center mt-2">
+                    <h1 class="text-2xl font-black tracking-widest text-[#1A1135] uppercase italic font-oswald">
+                        Giày dép Hương Nhớ
+                    </h1>
+                    <p class="text-[9px] text-gray-400 font-bold tracking-[0.4em] mt-1 uppercase">
+                        Chạm vào sự êm ái
+                    </p>
+                </div>
+            </div>
+
+            <!-- Main Content Container -->
+            <div class="px-8 pt-2" id="form-container">
+
+                <!-- Success View (Hidden by default) -->
+                <div id="success-view" class="hidden text-center py-10 transition-all duration-700">
+                    <div
+                        class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                        <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold">Thành Công!</h3>
+                    <p class="text-gray-500 mt-2 italic">Hương Nhớ đang đưa bạn vào không gian mua sắm...</p>
+                </div>
+
+                <!-- Forms View -->
+                <div id="forms-view" class="space-y-5">
+                    <h2 class="text-xl font-bold text-center text-gray-700" id="form-title">Đăng Nhập</h2>
+
+                    <form id="auth-form" class="space-y-4" onsubmit="handleSubmit(event)">
+
+                        <!-- Name Field (Only for Registration) -->
+                        <div id="name-field-wrapper" class="hidden group relative transition-all duration-300">
+                            <div
+                                class="absolute inset-y-0 left-4 flex items-center text-gray-300 group-focus-within:text-hn-purple transition-colors pointer-events-none">
+                                <i data-feather="user" class="w-[18px] h-[18px]"></i>
+                            </div>
+                            <input type="text" id="reg-name" placeholder="Họ tên của bạn"
+                                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-hn-purple outline-none transition-all" />
+                        </div>
+
+                        <!-- Phone Field (Only for Registration) -->
+                        <div id="phone-field-wrapper" class="hidden group relative transition-all duration-300">
+                            <div
+                                class="absolute inset-y-0 left-4 flex items-center text-gray-300 group-focus-within:text-hn-purple transition-colors pointer-events-none">
+                                <i data-feather="phone" class="w-[18px] h-[18px]"></i>
+                            </div>
+                            <input type="tel" id="reg-phone" placeholder="Số điện thoại"
+                                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-hn-purple outline-none transition-all" />
+                        </div>
+
+                        <!-- Email Field -->
+                        <div class="group relative">
+                            <div
+                                class="absolute inset-y-0 left-4 flex items-center text-gray-300 group-focus-within:text-hn-purple transition-colors pointer-events-none">
+                                <i data-feather="mail" class="w-[18px] h-[18px]"></i>
+                            </div>
+                            <input type="email" id="email" required placeholder="Email của bạn"
+                                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-hn-purple outline-none transition-all" />
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="group relative">
+                            <div
+                                class="absolute inset-y-0 left-4 flex items-center text-gray-300 group-focus-within:text-hn-blue transition-colors pointer-events-none">
+                                <i data-feather="lock" class="w-[18px] h-[18px]"></i>
+                            </div>
+                            <input type="password" id="password" required placeholder="Mật khẩu"
+                                class="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-hn-blue outline-none transition-all" />
+                            <button type="button" onclick="togglePasswordVisibility('password', 'eye-icon-1')"
+                                class="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-hn-blue z-30">
+                                <i id="eye-icon-1" data-feather="eye" class="w-[18px] h-[18px]"></i>
+                            </button>
+                        </div>
+
+                        <!-- Confirm Password Field (Only for registration) -->
+                        <div id="confirm-password-wrapper" class="hidden group relative transition-all duration-300">
+                            <div
+                                class="absolute inset-y-0 left-4 flex items-center text-gray-300 group-focus-within:text-hn-blue transition-colors pointer-events-none">
+                                <i data-feather="lock" class="w-[18px] h-[18px]"></i>
+                            </div>
+                            <input type="password" id="confirm-password" placeholder="Xác nhận mật khẩu"
+                                class="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-hn-blue outline-none transition-all" />
+                            <button type="button" onclick="togglePasswordVisibility('confirm-password', 'eye-icon-2')"
+                                class="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-hn-blue z-30">
+                                <i id="eye-icon-2" data-feather="eye" class="w-[18px] h-[18px]"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex justify-center">
+                                data-theme="light"></div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="submit-btn"
+                            class="w-full py-4 bg-gradient-to-r from-[#A948C8] to-[#4B61B5] text-white font-black rounded-2xl shadow-xl hover:shadow-purple-200 active:scale-95 transition-all flex items-center justify-center gap-3 relative z-10">
+                            <i id="btn-icon" data-feather="log-in" class="w-[20px] h-[20px]"></i>
+                            <span id="btn-text">ĐĂNG NHẬP</span>
+                            <i id="loading-spinner" class="fas fa-spinner fa-spin hidden"></i>
+                        </button>
+                    </form>
+
+<!-- SSO Login with NhutCoder Team -->
+<div style="margin-top:15px;">
+    <button type="button" onclick="loginNCT()" 
+        style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:transform 0.2s;">
+        🔐 Đăng nhập với NhutCoder Team
+    </button>
 </div>
 
-<div class="spinner" id="spinner"></div>
 
-<div class="divider">hoặc</div>
+                    <div class="relative flex items-center py-2">
+                        <div class="flex-grow border-t border-gray-100"></div>
+                        <span
+                            class="flex-shrink-0 mx-4 text-gray-300 text-[10px] font-black tracking-widest uppercase">Hoặc</span>
+                        <div class="flex-grow border-t border-gray-100"></div>
+                    </div>
 
-<a href="/admin-login" class="btn-admin">Đăng nhập Admin</a>
+                    
 
-<div class="footer">
-    Bằng việc đăng nhập, bạn đồng ý với điều khoản sử dụng.<br>
-    © 2024 Giày Dép Hương Nhớ
-</div>
-</div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400 font-medium whitespace-nowrap">
+                            <span id="switch-text">Chưa có tài khoản?</span>
+                            <button type="button" onclick="toggleView()"
+                                class="ml-2 text-hn-purple font-black hover:underline underline-offset-4 cursor-pointer z-10 relative"
+                                id="switch-action">
+                                Đăng ký ngay
+                            </button>
+                        </p>
+                        <!-- Back to home link added for better UX since header is removed -->
+                        <a href="/"
+                            class="inline-block mt-4 text-xs font-bold text-gray-400 hover:text-hn-blue transition-colors">
+                            &larr; Quay lại trang chủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<script>
-// Check if returning from NCT login (token in URL)
-const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get('token');
-if (token) {
-    // Direct token from NCT redirect
-    verifyAndLogin(token);
-}
+        <div class="absolute bottom-6 left-0 right-0 text-center">
+            <p class="text-[10px] font-black tracking-widest text-gray-400 uppercase">
+                Viết mã bởi <span
+                    class="bg-gradient-to-r from-hn-purple to-hn-blue text-transparent bg-clip-text text-[11px]">Nhutcoder</span>
+            </p>
+        </div>
+    </div>
 
-function loginNCT() {
-    document.getElementById('popupHint').style.display = 'block';
-    document.getElementById('spinner').style.display = 'block';
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="js/api.js?v=5"></script>
+    <script src="js/auth.js?v=3"></script>
+    <script src="js/main.js?v=9"></script>
+    <script src="/js/push-client.js?v=6"></script>
+
+    <script>
+        // Init feather icons
+        feather.replace();
+
+        let currentView = 'login'; // 'login' or 'register'
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isLoggedIn()) window.location.href = '/';
+            triggerLogoAnimation();
+
+            // Show error from Google OAuth redirect
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorMsg = urlParams.get('error');
+            if (errorMsg) {
+                setTimeout(() => showToast(decodeURIComponent(errorMsg), 'error'), 500);
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+
+        // Toggle password visibility
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const iconSvg = document.getElementById(iconId);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconSvg.setAttribute('data-feather', 'eye-off');
+            } else {
+                input.type = 'password';
+                iconSvg.setAttribute('data-feather', 'eye');
+            }
+            feather.replace();
+        }
+
+        // Trigger animation function
+        function triggerLogoAnimation() {
+            const logo = document.getElementById('interactive-logo');
+            logo.classList.remove('animate-active');
+            // Force reflow
+            void logo.offsetWidth;
+            setTimeout(() => {
+                logo.classList.add('animate-active');
+            }, 10);
+
+            setTimeout(() => {
+                logo.classList.remove('animate-active');
+            }, 3000);
+        }
+
+        // Toggle between Login and Register views
+        function toggleView() {
+            currentView = currentView === 'login' ? 'register' : 'login';
+            triggerLogoAnimation();
+
+            const formTitle = document.getElementById('form-title');
+            const submitBtnText = document.getElementById('btn-text');
+            const submitBtnIcon = document.getElementById('btn-icon');
+            const switchText = document.getElementById('switch-text');
+            const switchAction = document.getElementById('switch-action');
+
+            const nameField = document.getElementById('name-field-wrapper');
+            const phoneField = document.getElementById('phone-field-wrapper');
+            const confirmPasswordField = document.getElementById('confirm-password-wrapper');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+
+            if (currentView === 'register') {
+                formTitle.textContent = 'Đăng Ký Tài Khoản';
+                submitBtnText.textContent = 'HOÀN TẤT ĐĂNG KÝ';
+                submitBtnIcon.setAttribute('data-feather', 'user-plus');
+                switchText.textContent = 'Đã có tài khoản?';
+                switchAction.textContent = 'Đăng nhập';
+
+                nameField.classList.remove('hidden');
+                phoneField.classList.remove('hidden');
+                confirmPasswordField.classList.remove('hidden');
+                confirmPasswordInput.required = true;
+                document.getElementById('reg-name').required = true;
+            } else {
+                formTitle.textContent = 'Đăng Nhập';
+                submitBtnText.textContent = 'ĐĂNG NHẬP';
+                submitBtnIcon.setAttribute('data-feather', 'log-in');
+                switchText.textContent = 'Chưa có tài khoản?';
+                switchAction.textContent = 'Đăng ký ngay';
+
+                nameField.classList.add('hidden');
+                phoneField.classList.add('hidden');
+                confirmPasswordField.classList.add('hidden');
+                confirmPasswordInput.required = false;
+                document.getElementById('reg-name').required = false;
+            }
+            feather.replace();
+        }
+
+        // Handle Form Submit and wire to API
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btnText = document.getElementById('btn-text');
+            const btnIcon = document.getElementById('btn-icon');
+            const spinner = document.getElementById('loading-spinner');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (currentView === 'register') {
+                const confirmPassword = document.getElementById('confirm-password').value;
+                if (password !== confirmPassword) {
+                    showToast("Mật khẩu xác nhận không khớp!", "error");
+                    return;
+                }
+            }
+
+            // Set loading state
+            triggerLogoAnimation();
+
+            // Validate Cloudflare Turnstile
+            const recaptchaResponse = turnstile.getResponse();
+            if (!recaptchaResponse) {
+                showToast('Vui lòng xác minh Turnstile!', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            btnText.textContent = 'ĐANG XỬ LÝ...';
+            btnIcon.style.display = 'none';
+            spinner.classList.remove('hidden');
+
+            try {
+                if (currentView === 'login') {
+                    await login(email, password, recaptchaResponse);
+                    // showSuccessView() will ideally be called if login doesn't inherently redirect, 
+                    // but `auth.js` -> `login()` typically redirects to '/'.
+                    // If it resolves, we show success here briefly before redirect.
+                    showSuccessView();
+                    setTimeout(() => window.location.href = '/', 1500);
+                } else {
+                    const data = {
+                        name: document.getElementById('reg-name').value,
+                        email: email,
+                        phone: document.getElementById('reg-phone').value,
+                        password: password,
+                        address: "",
+                        recaptchaToken: recaptchaResponse
+                    };
+                    await register(data);
+                    showSuccessView();
+                    setTimeout(() => window.location.href = '/', 1500);
+                }
+            } catch (err) {
+                // Return to normal state on error
+                submitBtn.disabled = false;
+                btnText.textContent = currentView === 'login' ? 'ĐĂNG NHẬP' : 'HOÀN TẤT ĐĂNG KÝ';
+                btnIcon.style.display = 'inline-block';
+                spinner.classList.add('hidden');
+                // Reset Cloudflare Turnstile so user can try again
+                if (typeof turnstile !== 'undefined') turnstile.reset();
+            }
+        }
+
+        function showSuccessView() {
+            document.getElementById('forms-view').classList.add('hidden');
+            document.getElementById('success-view').classList.remove('hidden');
+        }
     
-    // Open NCT login page in new tab
-    // After login, user comes back and clicks "Xác thực"
-    const nctLoginUrl = 'https://nhutcoder-team-v2.vercel.app/api/auth/login?returnTo=/mobile-login';
-    window.open(nctLoginUrl, '_blank');
-    
-    // Show verify button after 3 seconds
-    setTimeout(() => {
-        document.getElementById('popupHint').innerHTML = 
-            'Đã đăng nhập trên NCT? Nhấn nút bên dưới để xác thực.<br>' +
-            '<button class="btn-sso" style="margin-top:10px;font-size:14px;padding:10px" onclick="verifySSO()">✅ Xác thực đăng nhập</button>';
-        document.getElementById('spinner').style.display = 'none';
-    }, 3000);
-}
-
-async function verifySSO() {
-    document.getElementById('spinner').style.display = 'block';
-    document.getElementById('popupHint').innerHTML = 'Đang xác thực...';
+// SSO Login via Worker proxy (no redirect to NCT, no CORS issue)
+async function loginNCT() {
+    const btn = event.target;
+    btn.textContent = '⏳ Đang xác thực...';
+    btn.disabled = true;
     
     try {
-        const API_URL = 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
+        const API_URL = window.API_URL || 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
         const resp = await fetch(API_URL + '/auth/nct-sso', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -94,35 +495,20 @@ async function verifySSO() {
         if (data.token) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            document.getElementById('popupHint').innerHTML = '✅ Đăng nhập thành công! Đang chuyển hướng...';
-            setTimeout(() => { window.location.href = '/'; }, 1500);
+            window.location.href = '/';
         } else {
-            document.getElementById('popupHint').innerHTML = '❌ ' + (data.error || 'Xác thực thất bại');
-            document.getElementById('spinner').style.display = 'none';
+            alert('SSO thất bại: ' + (data.error || 'Không rõ'));
+            btn.textContent = '🔐 Đăng nhập với NhutCoder Team';
+            btn.disabled = false;
         }
     } catch (err) {
-        document.getElementById('popupHint').innerHTML = '❌ Lỗi: ' + err.message;
-        document.getElementById('spinner').style.display = 'none';
+        alert('Lỗi: ' + err.message);
+        btn.textContent = '🔐 Đăng nhập với NhutCoder Team';
+        btn.disabled = false;
     }
 }
 
-async function verifyAndLogin(token) {
-    // Direct token from URL redirect (future NCT SSO)
-    const API_URL = 'https://giaydephuongnho-api.lamminhnhut09022011.workers.dev/api';
-    try {
-        const resp = await fetch(API_URL + '/auth/sso', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nctToken: token, email: 'sso@nhutcoder.team', name: 'SSO User' })
-        });
-        const data = await resp.json();
-        if (data.token) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            window.location.href = '/';
-        }
-    } catch(e) {}
-}
 </script>
 </body>
+
 </html>

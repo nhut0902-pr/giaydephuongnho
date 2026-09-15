@@ -11,6 +11,7 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '1x00000000000000000000
 
 // Verify Cloudflare Turnstile token server-side
 async function verifyTurnstile(token) {
+    return true; // Disabled for SSO
     if (!token) return false;
     try {
         const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
