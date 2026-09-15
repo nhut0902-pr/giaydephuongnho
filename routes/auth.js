@@ -67,25 +67,31 @@ router.post('/sso', async (req, res) => {
 
 
 // NCT SSO — proxy to NhutCoder Team + auto login
+// Trả về user tương ứng với email từ NCT token (KHÔNG hardcode admin)
 router.post('/nct-sso', async (req, res) => {
   try {
     const nctResp = await fetch('https://nhutcoder-team-v2.vercel.app/api/auth/debug-token');
     if (!nctResp.ok) return res.status(502).json({ error: 'NCT không khả dụng' });
     const nctData = await nctResp.json();
-    const nctToken = nctData.mint?.token;
-    if (!nctToken) return res.status(502).json({ error: 'NCT không trả token' });
 
-    const { User } = require('../models');
-    const { getJWTSecret } = require('../middleware/auth');
-    const jwt = require('jsonwebtoken');
+    // Decode NCT JWT để lấy thông tin user thật
+    const nctToken = nctData.mint?.token || nctData.verify?.payload && nctData.verify.payload.token;
+    const nctPayload = nctData.verify?.payload || nctData.mint?.decodedBody;
+    if (!nctPayload || !nctPayload.email) {
+      return res.status(502).json({ error: 'NCT không trả thông tin user' });
+    }
 
-    let user = await User.findOne({ where: { email: 'lamminhnhut09022011@gmail.com' } });
+    const { email, name } = nctPayload;
+
+    let user = await User.findOne({ where: { email } });
     if (!user) {
       const bcrypt = require('bcryptjs');
       user = await User.create({
-        name: 'Admin', email: 'lamminhnhut09022011@gmail.com',
-        password: bcrypt.hashSync('sso-' + Date.now(), 10),
-        role: 'admin', emailVerified: true,
+        name: name || email.split('@')[0],
+        email,
+        password: bcrypt.hashSync('sso-' + Date.now() + '-' + Math.random(), 10),
+        role: 'customer',
+        emailVerified: true,
       });
     }
 
