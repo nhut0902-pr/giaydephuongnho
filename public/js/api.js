@@ -46,7 +46,8 @@ function resolveApiBase(endpoint, options) {
 }
 
 // API Helper Functions
-// Có retry 1 lần nếu gặp lỗi 5xx hoặc network error (Worker cold-start)
+// Có retry 3 lần nếu gặp lỗi 5xx, network error, hoặc timeout (Worker cold-start)
+// Mỗi attempt có timeout 10s, backoff 1s/2s/3s
 async function api(endpoint, options = {}) {
     const token = localStorage.getItem('token');
     const hasBody = options.body !== undefined && options.body !== null;
@@ -63,89 +64,136 @@ async function api(endpoint, options = {}) {
     }
 
     const baseUrl = resolveApiBase(endpoint, options);
+    const TARGET_URL = `${baseUrl}${endpoint}`;
 
+    // Fetch với timeout 10s bằng AbortController
     const doFetch = async () => {
-        const response = await fetch(`${baseUrl}${endpoint}`, config);
-        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        let data = null;
-        let rawText = '';
+        try {
+            const response = await fetch(TARGET_URL, {
+                ...config,
+                signal: controller.signal
+            });
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
-        if (contentType.includes('application/json')) {
-            try {
-                data = await response.json();
-            } catch (e) {
-                data = null;
+            let data = null;
+            let rawText = '';
+
+            if (contentType.includes('application/json')) {
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = null;
+                }
+            } else {
+                rawText = await response.text();
             }
-        } else {
-            rawText = await response.text();
-        }
 
-        return { response, data, rawText };
+            return { response, data, rawText };
+        } finally {
+            clearTimeout(timeoutId);
+        }
     };
 
-    let result;
-    try {
-        result = await doFetch();
-    } catch (networkErr) {
-        // Network error (Failed to fetch) → retry 1 lần sau 1s
-        await new Promise(r => setTimeout(r, 1000));
+    // Retry 3 lần với backoff 1s/2s/3s
+    const MAX_ATTEMPTS = 3;
+    const BACKOFF_MS = [0, 1000, 2000, 3000];
+
+    let lastError = null;
+    let lastResponse = null;
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        if (BACKOFF_MS[attempt] > 0) {
+            await new Promise(r => setTimeout(r, BACKOFF_MS[attempt]));
+        }
+
         try {
-            result = await doFetch();
-        } catch (retryErr) {
-            throw new Error('Không kết nối được tới server. Vui lòng kiểm tra mạng và thử lại.');
-        }
-    }
+            const result = await doFetch();
+            const { response, data, rawText } = result;
 
-    const { response, data, rawText } = result;
-
-    // Lỗi 5xx → retry 1 lần (Worker cold-start có thể trả 500 tạm thời)
-    if (response.status >= 500) {
-        await new Promise(r => setTimeout(r, 1000));
-        try {
-            const retry = await doFetch();
-            if (retry.response.ok) {
-                return retry.data !== null ? retry.data : (retry.rawText.trim() ? JSON.parse(retry.rawText) : {});
+            // Lỗi 5xx (Worker cold-start có thể trả 500 tạm thời) → retry
+            if (response.status >= 500) {
+                lastError = new Error('Server đang tải lại (5xx), thử lại lần ' + (attempt + 1));
+                lastResponse = result;
+                if (attempt < MAX_ATTEMPTS - 1) continue;
+                throw lastError;
             }
-            // Vẫn lỗi → throw với thông báo thân thiện
-            throw new Error('Server đang tải lại, vui lòng thử lại sau giây lát.');
-        } catch (retryErr) {
-            if (retryErr.message) throw retryErr;
-            throw new Error('Server đang tải lại, vui lòng thử lại sau giây lát.');
-        }
-    }
 
-    if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-            // Token invalid or expired
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            if (window.authAPI && window.updateAuthUI) {
-                window.updateAuthUI();
+            // 401/403 → token hết hạn, không retry
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                if (window.authAPI && window.updateAuthUI) {
+                    window.updateAuthUI();
+                }
+                throw new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
             }
-            throw new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+
+            // Response OK
+            if (response.ok) {
+                if (data !== null) return data;
+                if (rawText.trim().startsWith('<')) {
+                    throw new Error('API trả về HTML thay vì JSON. Vui lòng thử lại.');
+                }
+                if (!rawText.trim()) return {};
+                try {
+                    return JSON.parse(rawText);
+                } catch (e) {
+                    return { message: rawText };
+                }
+            }
+
+            // 4xx khác → không retry, throw ngay
+            const textError = rawText && !rawText.trim().startsWith('<') ? rawText.trim() : '';
+            throw new Error((data && data.error) || textError || `Yêu cầu thất bại (${response.status})`);
+
+        } catch (err) {
+            // AbortError (timeout) hoặc TypeError (Failed to fetch) → retry
+            const isTimeout = err.name === 'AbortError';
+            const isNetworkErr = err instanceof TypeError || err.message.includes('Failed to fetch');
+            const isServerErr = err.message && err.message.includes('Server đang tải lại');
+
+            if (isTimeout || isNetworkErr || isServerErr) {
+                lastError = err;
+                if (attempt < MAX_ATTEMPTS - 1) {
+                    console.warn(`[api] ${endpoint} attempt ${attempt + 1} failed (${err.name || err.message}), retrying...`);
+                    continue;
+                }
+                // Hết retry
+                if (isTimeout) {
+                    throw new Error('Server phản hồi chậm. Vui lòng tải lại trang.');
+                }
+                if (isNetworkErr) {
+                    throw new Error('Không kết nối được tới server. Vui lòng kiểm tra mạng.');
+                }
+                throw err;
+            }
+
+            // Lỗi khác (vd 4xx, JSON parse) → không retry
+            throw err;
         }
-
-        const textError = rawText && !rawText.trim().startsWith('<') ? rawText.trim() : '';
-        throw new Error((data && data.error) || textError || `Yêu cầu thất bại (${response.status})`);
     }
 
-    if (data !== null) return data;
-
-    // Backend should return JSON for API endpoints. If HTML is returned,
-    // it's usually an old server process or missing route after deploy.
-    if (rawText.trim().startsWith('<')) {
-        throw new Error('API trả về HTML thay vì JSON. Vui lòng khởi động lại server để nạp route mới.');
-    }
-
-    if (!rawText.trim()) return {};
-
-    try {
-        return JSON.parse(rawText);
-    } catch (e) {
-        return { message: rawText };
-    }
+    // Fallback (không nên tới đây)
+    throw lastError || new Error('Không thể gọi API sau nhiều lần thử.');
 }
+
+// Prewarm Workers — ping ngay khi trang load để giảm cold-start
+// Fire-and-forget, không chặn UI
+(function prewarmWorkers() {
+    if (typeof window === 'undefined') return;
+    try {
+        // Ping public Worker
+        fetch(`${API_URL.replace('/api', '')}/ping`, { method: 'GET' }).catch(() => {});
+        // Ping admin Worker (chỉ nếu user đã login)
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetch(`${ADMIN_API_URL.replace('/api', '')}/ping`, { method: 'GET' }).catch(() => {});
+        }
+    } catch (e) {}
+})();
 
 // Auth API
 const authAPI = {
