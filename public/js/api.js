@@ -7,6 +7,34 @@ window.API_URL = API_URL;
 const ADMIN_API_URL = window.ADMIN_API_URL || 'https://giaydephuongnho-admin-api.lamminhnhut09022011.workers.dev/api';
 window.ADMIN_API_URL = ADMIN_API_URL;
 
+// Cache TTL (5 phút) — dùng localStorage để tránh gọi API mỗi page load
+// Cloudflare Workers free tier có concurrency limit cao → 90% concurrent fail
+// Cache giúp user thấy data ngay, fetch fresh ngầm
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút
+const CACHE_PREFIX = 'gdn_cache_';
+
+function getCache(endpoint) {
+    try {
+        const raw = localStorage.getItem(CACHE_PREFIX + endpoint);
+        if (!raw) return null;
+        const cached = JSON.parse(raw);
+        if (Date.now() - cached.t > CACHE_TTL_MS) {
+            localStorage.removeItem(CACHE_PREFIX + endpoint);
+            return null;
+        }
+        return cached.d;
+    } catch (e) { return null; }
+}
+
+function setCache(endpoint, data) {
+    try {
+        localStorage.setItem(CACHE_PREFIX + endpoint, JSON.stringify({
+            t: Date.now(),
+            d: data
+        }));
+    } catch (e) {}
+}
+
 // Routes that belong to admin Worker (heavy: image upload, PDF, admin stats)
 function isAdminEndpoint(endpoint, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
@@ -51,6 +79,25 @@ function resolveApiBase(endpoint, options) {
 async function api(endpoint, options = {}) {
     const token = localStorage.getItem('token');
     const hasBody = options.body !== undefined && options.body !== null;
+    const method = (options.method || 'GET').toUpperCase();
+
+    // GET requests → check cache trước, nếu có cache thì trả về ngay + refresh ngầm
+    // (trừ endpoints có query params động như pagination — vẫn cache nhưng key bao gồm query)
+    if (method === 'GET' && !endpoint.includes('/admin/') && !endpoint.includes('/profile')) {
+        const cached = getCache(endpoint);
+        if (cached) {
+            // Refresh ngầm (không chặn) — nếu fail thì giữ cache cũ
+            api(endpoint, { ...options, _skipCache: true }).then(data => {
+                setCache(endpoint, data);
+            }).catch(() => {});
+            return cached;
+        }
+    }
+
+    // Bỏ qua cache nếu đang refresh ngầm
+    if (options._skipCache) {
+        delete options._skipCache;
+    }
 
     const config = {
         headers: {
@@ -146,16 +193,23 @@ async function api(endpoint, options = {}) {
 
             // Response OK
             if (response.ok) {
-                if (data !== null) return data;
-                if (rawText.trim().startsWith('<')) {
+                let result;
+                if (data !== null) result = data;
+                else if (rawText.trim().startsWith('<')) {
                     throw new Error('API trả về HTML thay vì JSON. Vui lòng thử lại.');
                 }
-                if (!rawText.trim()) return {};
-                try {
-                    return JSON.parse(rawText);
-                } catch (e) {
-                    return { message: rawText };
+                else if (!rawText.trim()) result = {};
+                else {
+                    try { result = JSON.parse(rawText); }
+                    catch (e) { result = { message: rawText }; }
                 }
+
+                // Cache GET responses (trừ admin/profile)
+                if (method === 'GET' && !endpoint.includes('/admin/') && !endpoint.includes('/profile')) {
+                    setCache(endpoint, result);
+                }
+
+                return result;
             }
 
             // 4xx khác → không retry, throw ngay
