@@ -201,11 +201,17 @@ const ADMIN_PING_URL = ADMIN_API_URL.replace('/api', '') + '/ping';
 let prewarmPublicPromise = null;
 let prewarmAdminPromise = null;
 
+// Prewarm Worker — nếu fetch fail, RESET promise để lần sau retry lại được
+// Tránh tình trạng cache Promise=false mãi mãi nếu network glitch lần đầu
 function prewarmPublic() {
     if (!prewarmPublicPromise) {
         prewarmPublicPromise = fetch(PUBLIC_PING_URL, { method: 'GET' })
             .then(() => true)
-            .catch(() => false);
+            .catch((err) => {
+                // Reset để retry lần sau
+                prewarmPublicPromise = null;
+                return false;
+            });
     }
     return prewarmPublicPromise;
 }
@@ -214,9 +220,23 @@ function prewarmAdmin() {
     if (!prewarmAdminPromise) {
         prewarmAdminPromise = fetch(ADMIN_PING_URL, { method: 'GET' })
             .then(() => true)
-            .catch(() => false);
+            .catch((err) => {
+                prewarmAdminPromise = null;
+                return false;
+            });
     }
     return prewarmAdminPromise;
+}
+
+// Force retry prewarm (sau khi đã fail 1 lần, dùng trong requireAdmin retry)
+function retryPrewarmPublic() {
+    prewarmPublicPromise = null;
+    return prewarmPublic();
+}
+
+function retryPrewarmAdmin() {
+    prewarmAdminPromise = null;
+    return prewarmAdmin();
 }
 
 // Kick-off ngay khi script load (fire-and-forget)

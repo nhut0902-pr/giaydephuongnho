@@ -186,25 +186,24 @@ async function requireAdmin() {
     document.body.style.opacity = '0';
 
     const token = localStorage.getItem('token');
-    const maxAttempts = 3;
+    const maxAttempts = 4;  // Tăng từ 3 lên 4
     let lastError = null;
 
-    // Await prewarm public Worker trước khi gọi /auth/profile
-    // → tránh tình trạng fetch văng TypeError khi Worker đang cold-start
-    if (typeof prewarmPublic === 'function') {
-        try {
-            await Promise.race([
-                prewarmPublic(),
-                new Promise(r => setTimeout(r, 3500))
-            ]);
-        } catch (e) {}
-    }
-
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        // Retry prewarm trước mỗi attempt (nếu prewarm lần trước fail)
+        if (typeof retryPrewarmPublic === 'function') {
+            try {
+                await Promise.race([
+                    retryPrewarmPublic(),
+                    new Promise(r => setTimeout(r, 2000))
+                ]);
+            } catch (e) {}
+        }
+
         try {
-            // Fetch với timeout 10s bằng AbortController
+            // Fetch với timeout 8s bằng AbortController (giảm từ 10s xuống 8s để retry nhanh hơn)
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
 
             let response;
             try {
@@ -220,7 +219,7 @@ async function requireAdmin() {
             if (response.status >= 500 || response.status === 0) {
                 lastError = new Error('Server error ' + response.status);
                 if (attempt < maxAttempts) {
-                    await new Promise(r => setTimeout(r, 800 * attempt));
+                    await new Promise(r => setTimeout(r, 600 * attempt));
                     continue;
                 }
                 throw lastError;
@@ -236,7 +235,7 @@ async function requireAdmin() {
             if (!contentType.includes('application/json')) {
                 lastError = new Error('Non-JSON response');
                 if (attempt < maxAttempts) {
-                    await new Promise(r => setTimeout(r, 800 * attempt));
+                    await new Promise(r => setTimeout(r, 600 * attempt));
                     continue;
                 }
                 throw lastError;
@@ -258,7 +257,7 @@ async function requireAdmin() {
             }
             // AbortError, TypeError, Server error → retry
             if (attempt < maxAttempts) {
-                await new Promise(r => setTimeout(r, 800 * attempt));
+                await new Promise(r => setTimeout(r, 600 * attempt));
                 continue;
             }
         }
@@ -270,6 +269,26 @@ async function requireAdmin() {
         localStorage.removeItem('user');
         window.location.href = '/login.html';
         return false;
+    }
+
+    // FALLBACK: Nếu user đã login (localStorage có token + user với role=admin)
+    // mà chỉ fail vì network/server issue → vẫn cho vào admin page
+    // Server sẽ verify token thật ở mỗi API call tiếp theo
+    const localUser = localStorage.getItem('user');
+    const localToken = localStorage.getItem('token');
+    if (localUser && localToken) {
+        try {
+            const user = JSON.parse(localUser);
+            if (user.role === 'admin') {
+                console.warn('[requireAdmin] Server verify fail, nhưng localStorage có token admin hợp lệ → fallback vào admin page');
+                document.body.style.opacity = '1';
+                // Show warning banner (không chặn)
+                if (typeof showToast === 'function') {
+                    showToast('Đang kết nối server chậm. Dữ liệu có thể không tải đầy đủ — vui lòng refresh sau giây lát.', 'error');
+                }
+                return true;  // ← Cho vào admin page
+            }
+        } catch (e) {}
     }
 
     // Lỗi khác (server down, network) → show error, không redirect
