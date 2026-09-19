@@ -199,7 +199,29 @@ export default {
         );
       }
     }
-    const response = await handleWithExpress(request, app);
+
+    // Wrap handleWithExpress trong try/catch để tránh error code: 1101
+    // Khi nhiều concurrent requests hit cùng lúc, Express có thể throw uncaught
+    // (Prisma client init fail, libsql connection pool exhausted, etc.)
+    // → Cloudflare trả "error code: 1101" plain text
+    // → frontend api() throw "Server đang tải lại" (5xx retry path)
+    let response;
+    try {
+      response = await handleWithExpress(request, app);
+    } catch (err) {
+      console.error('[public] handleWithExpress uncaught:', err);
+      // Reset bootstrap để retry lần sau
+      bootstrapped = false;
+      return new Response(
+        JSON.stringify({
+          error: 'Worker đang khởi động lại, vui lòng thử lại sau giây lát',
+          details: err.message,
+          retryAfter: 1000
+        }),
+        { status: 503, headers: { 'content-type': 'application/json', 'retry-after': '1', ...CORS_HEADERS } }
+      );
+    }
+
     const headers = new Headers(response.headers);
     for (const [key, value] of Object.entries(CORS_HEADERS)) headers.set(key, value);
     return new Response(response.body, {

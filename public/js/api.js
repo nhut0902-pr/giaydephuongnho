@@ -111,8 +111,8 @@ async function api(endpoint, options = {}) {
     };
 
     // Retry 3 lần với backoff 1s/2s/3s
-    const MAX_ATTEMPTS = 3;
-    const BACKOFF_MS = [0, 1000, 2000, 3000];
+    const MAX_ATTEMPTS = 5;
+    const BACKOFF_MS = [0, 500, 1000, 2000, 3000];
 
     let lastError = null;
     let lastResponse = null;

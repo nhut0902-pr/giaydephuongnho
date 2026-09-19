@@ -198,7 +198,23 @@ export default {
         );
       }
     }
-    const response = await handleWithExpress(request, app);
+    // Wrap handleWithExpress trong try/catch để tránh error code: 1101
+    let response;
+    try {
+      response = await handleWithExpress(request, app);
+    } catch (err) {
+      console.error('[admin] handleWithExpress uncaught:', err);
+      bootstrapped = false;
+      return new Response(
+        JSON.stringify({
+          error: 'Worker đang khởi động lại, vui lòng thử lại sau giây lát',
+          details: err.message,
+          retryAfter: 1000
+        }),
+        { status: 503, headers: { 'content-type': 'application/json', 'retry-after': '1', ...CORS_HEADERS } }
+      );
+    }
+
     const headers = new Headers(response.headers);
     for (const [key, value] of Object.entries(CORS_HEADERS)) headers.set(key, value);
     return new Response(response.body, {
