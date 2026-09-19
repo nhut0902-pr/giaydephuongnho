@@ -66,6 +66,19 @@ async function api(endpoint, options = {}) {
     const baseUrl = resolveApiBase(endpoint, options);
     const TARGET_URL = `${baseUrl}${endpoint}`;
 
+    // Await prewarm ping cho Worker tương ứng trước khi gọi endpoint thật
+    // → tránh tình trạng prewarm và api() chạy song song, cả 2 đều đụng Worker cold-start
+    // Timeout 3.5s để không block quá lâu nếu Worker vẫn đang cold-start
+    try {
+        const prewarmPromise = isAdminEndpoint(endpoint, options)
+            ? prewarmAdmin()
+            : prewarmPublic();
+        await Promise.race([
+            prewarmPromise,
+            new Promise(r => setTimeout(r, 3500))
+        ]);
+    } catch (e) {}
+
     // Fetch với timeout 10s bằng AbortController
     const doFetch = async () => {
         const controller = new AbortController();
@@ -181,19 +194,37 @@ async function api(endpoint, options = {}) {
 }
 
 // Prewarm Workers — ping ngay khi trang load để giảm cold-start
-// Fire-and-forget, không chặn UI
-(function prewarmWorkers() {
-    if (typeof window === 'undefined') return;
-    try {
-        // Ping public Worker
-        fetch(`${API_URL.replace('/api', '')}/ping`, { method: 'GET' }).catch(() => {});
-        // Ping admin Worker (chỉ nếu user đã login)
-        const token = localStorage.getItem('token');
-        if (token) {
-            fetch(`${ADMIN_API_URL.replace('/api', '')}/ping`, { method: 'GET' }).catch(() => {});
-        }
-    } catch (e) {}
-})();
+// Export Promise để api() có thể await trước khi gọi endpoint thật
+const PUBLIC_PING_URL = API_URL.replace('/api', '') + '/ping';
+const ADMIN_PING_URL = ADMIN_API_URL.replace('/api', '') + '/ping';
+
+let prewarmPublicPromise = null;
+let prewarmAdminPromise = null;
+
+function prewarmPublic() {
+    if (!prewarmPublicPromise) {
+        prewarmPublicPromise = fetch(PUBLIC_PING_URL, { method: 'GET' })
+            .then(() => true)
+            .catch(() => false);
+    }
+    return prewarmPublicPromise;
+}
+
+function prewarmAdmin() {
+    if (!prewarmAdminPromise) {
+        prewarmAdminPromise = fetch(ADMIN_PING_URL, { method: 'GET' })
+            .then(() => true)
+            .catch(() => false);
+    }
+    return prewarmAdminPromise;
+}
+
+// Kick-off ngay khi script load (fire-and-forget)
+if (typeof window !== 'undefined') {
+    prewarmPublic();
+    const _token = localStorage.getItem('token');
+    if (_token) prewarmAdmin();
+}
 
 // Auth API
 const authAPI = {
