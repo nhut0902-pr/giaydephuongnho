@@ -189,11 +189,32 @@ async function requireAdmin() {
     const maxAttempts = 3;
     let lastError = null;
 
+    // Await prewarm public Worker trước khi gọi /auth/profile
+    // → tránh tình trạng fetch văng TypeError khi Worker đang cold-start
+    if (typeof prewarmPublic === 'function') {
+        try {
+            await Promise.race([
+                prewarmPublic(),
+                new Promise(r => setTimeout(r, 3500))
+            ]);
+        } catch (e) {}
+    }
+
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-            const response = await fetch(`${API_URL}/auth/profile`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            // Fetch với timeout 10s bằng AbortController
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+            let response;
+            try {
+                response = await fetch(`${API_URL}/auth/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timeoutId);
+            }
 
             // Lỗi 5xx (Worker cold-start, network glitch) → retry, KHÔNG logout
             if (response.status >= 500 || response.status === 0) {
@@ -230,11 +251,12 @@ async function requireAdmin() {
             document.body.style.opacity = '1';
             return true;
         } catch (e) {
-            // Network error (Failed to fetch) → retry
+            // Phân biệt: AbortError (timeout), TypeError (network), Error khác
             lastError = e;
             if (e.message === 'Unauthorized') {
                 break; // Không retry nếu là lỗi auth thật sự
             }
+            // AbortError, TypeError, Server error → retry
             if (attempt < maxAttempts) {
                 await new Promise(r => setTimeout(r, 800 * attempt));
                 continue;
